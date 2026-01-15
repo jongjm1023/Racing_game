@@ -1,11 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 const express = require('express'); // 서버 도구 불러오기
 const mysql = require('mysql2');    // DB 도구 불러오기
 const app = express();
 
 app.use(express.json()); // 유니티가 보낸 JSON 데이터를 읽을 수 있게 함
-
+//console.log("DB 정보 확인:", process.env.DB_HOST, process.env.DB_USER);
 // 1. MySQL 연결 설정 
 const connection = mysql.createConnection({
     host: process.env.DB_HOST,      

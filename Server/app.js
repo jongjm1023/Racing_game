@@ -31,15 +31,32 @@ app.get('/', (req, res) => {
 // 4. 유니티에서 보낸 로그인 정보를 받는 통로
 app.post('/login', (req, res) => {
     const { googleId, nickname } = req.body;
-    console.log("유니티에서 온 아이디:", googleId);
-    
-    // SQL 쿼리
-    const sql = 'INSERT INTO users (google_id, nickname) VALUES (?, ?)';
-    connection.query(sql, [googleId, nickname], (err, result) => {
+    console.log("로그인 요청 옴:", googleId, nickname);
+
+    // 1. 일단 DB에 이 사람이 있는지 찾아본다 (SELECT)
+    const searchSql = 'SELECT * FROM users WHERE google_id = ?';
+    connection.query(searchSql, [googleId], (err, results) => {
         if (err) {
-            res.status(500).send("저장 실패");
-        } else {
-            res.send("DB에 잘 저장되었습니다!");
+            console.error(err);
+            return res.status(500).send("DB 검색 에러");
+        }
+
+        // 2. 만약 사람이 있다면? (이미 가입된 유저)
+        if (results.length > 0) {
+            console.log("기존 유저 로그인:", results[0].nickname);
+            res.send("로그인 성공 (기존 유저)");
+        } 
+        // 3. 없다면? (새로운 유저 -> 저장!)
+        else {
+            const insertSql = 'INSERT INTO users (google_id, nickname) VALUES (?, ?)';
+            connection.query(insertSql, [googleId, nickname], (err, result) => {
+                if (err) {
+                    console.error(err); // 여기서 에러 내용을 자세히 봅니다.
+                    return res.status(500).send("회원가입 실패");
+                }
+                console.log("신규 유저 가입 완료!");
+                res.send("회원가입 및 로그인 성공");
+            });
         }
     });
 });

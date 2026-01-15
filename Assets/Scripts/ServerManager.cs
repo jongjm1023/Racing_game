@@ -25,16 +25,16 @@ public class ServerManager : MonoBehaviour
     // 로그인 요청 함수
     IEnumerator Login(string id, string nick)
     {
-        // 1. 보낼 데이터 포장하기
+        // 1. 보낼 데이터 포장
         LoginData data = new LoginData { googleId = id, nickname = nick };
         string json = JsonUtility.ToJson(data); // JSON 문자열로 변환
 
-        // 2. 우체부(Request) 부르기
+        // 2. Request 생성
         UnityWebRequest request = new UnityWebRequest(baseUrl + "/login", "POST");
-        byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(json); //byte 배열로 변환
         
-        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        request.downloadHandler = new DownloadHandlerBuffer();
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw); // 데이터 넣기
+        request.downloadHandler = new DownloadHandlerBuffer(); // 응답 받을 준비
         request.SetRequestHeader("Content-Type", "application/json"); // "나 JSON 보낸다!"
 
         // 3. 전송하고 기다리기

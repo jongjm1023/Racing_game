@@ -23,45 +23,65 @@ connection.connect((err) => {
     console.log('DB에 성공적으로 연결되었습니다!');
 });
 
-// 3. 테스트용 주소 (브라우저에서 확인용)
-app.get('/', (req, res) => {
-    res.send('서버가 아주 잘 돌아가고 있어요!');
+// 4. 회원가입 처리
+app.post('/register', (req, res) => {
+    const { nickname, password} = req.body;
+    console.log(`회원가입 시도: ${nickname} / ${password}`);
+
+    // 중복 아이디 체크
+    const insertSql = 'INSERT INTO Users (nickname, password) VALUES (?, ?)';
+    
+    connection.query(insertSql, [nickname, password], (err, result) => {
+        if (err) {
+            // 에러 코드가 1062면 중복 아이디
+            if (err.errno === 1062) {
+                return res.status(409).json({ message: "이미 존재하는 아이디입니다." });
+            }
+            return res.status(500).send("서버 에러");
+        }
+        
+
+        res.json({ message: "회원가입 성공! 로그인 해주세요." });
+    });
 });
 
-// 4. 유니티에서 보낸 로그인 정보를 받는 통로
+// 5. 로그인 처리
 app.post('/login', (req, res) => {
-    const { googleId, nickname } = req.body;
-    console.log("로그인 요청 옴:", googleId, nickname);
+    const { nickname, password } = req.body;
+    console.log(`로그인 시도: ${nickname}`);
 
-    // 1. 일단 DB에 이 사람이 있는지 찾아본다 (SELECT)
-    const searchSql = 'SELECT * FROM users WHERE google_id = ?';
-    connection.query(searchSql, [googleId], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send("DB 검색 에러");
-        }
+    // 아이디와 비밀번호가 둘 다 맞는 유저를 찾음
+    const sql = 'SELECT * FROM Users WHERE nickname = ? AND password = ?';
+    
+    connection.query(sql, [nickname, password], (err, results) => {
+        if (err) return res.status(500).send("DB 에러");
 
-        // 2. 만약 사람이 있다면? (이미 가입된 유저)
         if (results.length > 0) {
-            console.log("기존 유저 로그인:", results[0].nickname);
-            res.send("로그인 성공 (기존 유저)");
-        } 
-        // 3. 없다면? (새로운 유저 -> 저장!)
-        else {
-            const insertSql = 'INSERT INTO users (google_id, nickname) VALUES (?, ?)';
-            connection.query(insertSql, [googleId, nickname], (err, result) => {
-                if (err) {
-                    console.error(err); // 여기서 에러 내용을 자세히 봅니다.
-                    return res.status(500).send("회원가입 실패");
-                }
-                console.log("신규 유저 가입 완료!");
-                res.send("회원가입 및 로그인 성공");
+            // 로그인 성공 (유저 정보 리턴)
+            res.json({
+                message: "로그인 성공",
+                data: results[0] 
             });
+        } else {
+            // 로그인 실패
+            res.status(401).json({ message: "아이디 또는 비밀번호가 틀렸습니다." });
         }
     });
 });
 
-// 5. 서버 시작 (3000번 포트에서 기다림)
+// 6. 유저 캐릭터 수정
+app.put('/user/update', (req, res) => {
+    const { nickname, current_character_id} = req.body;
+    
+    const updateSql = 'UPDATE Users SET current_character_id = ? WHERE nickname = ?';
+    
+    connection.query(updateSql, [current_character_id, nickname], (err, result) => {
+        if (err) return res.status(500).send("업데이트 실패");
+        res.json({ message: "정보 저장 완료" });
+    });
+});
+
+// 서버 실행
 app.listen(3000, () => {
     console.log('서버 실행 중: http://localhost:3000');
 });

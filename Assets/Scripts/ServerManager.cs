@@ -3,51 +3,110 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Text;
 
-// JSON 데이터를 담을 봉투 (Node.js랑 이름이 똑같아야 함!)
+// [데이터 규격 클래스들]
 [System.Serializable]
-public class LoginData
-{
-    public string googleId;
-    public string nickname;
-}
+public class RegisterData { public string nickname; public string password;  }
+
+[System.Serializable]
+public class LoginData { public string nickname; public string password; }
+
+[System.Serializable]
+public class UpdateData { public string nickname; public int current_character_id; }
 
 public class ServerManager : MonoBehaviour
 {
-    // Node.js 서버 주소 (로컬)
-    string baseUrl = "http://localhost:3000"; 
+    string baseUrl = "http://localhost:3000";
 
     void Start()
     {
-        // 게임 시작하자마자 테스트로 로그인 시도
-        StartCoroutine(Login("test_user_1", "SpeedRacer"));
+        // 테스트 시나리오 실행
+        StartCoroutine(TestRoutine());
     }
 
-    // 로그인 요청 함수
-    IEnumerator Login(string id, string nick)
+    IEnumerator TestRoutine()
     {
-        // 1. 보낼 데이터 포장
-        LoginData data = new LoginData { googleId = id, nickname = nick };
-        string json = JsonUtility.ToJson(data); // JSON 문자열로 변환
-
-        // 2. Request 생성
-        UnityWebRequest request = new UnityWebRequest(baseUrl + "/login", "POST");
-        byte[] bodyRaw = Encoding.UTF8.GetBytes(json); //byte 배열로 변환
+        // 1. 회원가입 시도
+        yield return StartCoroutine(Register("racer_01", "1234"));
         
-        request.uploadHandler = new UploadHandlerRaw(bodyRaw); // 데이터 넣기
-        request.downloadHandler = new DownloadHandlerBuffer(); // 응답 받을 준비
-        request.SetRequestHeader("Content-Type", "application/json"); // "나 JSON 보낸다!"
+        // 2. 로그인 시도
+        yield return StartCoroutine(Login("racer_01", "1234"));
 
-        // 3. 전송하고 기다리기
+        // 3. 정보 수정
+        //yield return new WaitForSeconds(2.0f);
+        //yield return StartCoroutine(UpdateUserInfo("racer_01", 2));
+    }
+
+    // [API 1] 회원가입
+    IEnumerator Register(string nick, string pw)
+    {
+        string url = baseUrl + "/register";
+        RegisterData data = new RegisterData { nickname = nick, password = pw };
+        string json = JsonUtility.ToJson(data);
+
+        // PostRequest 함수 재사용 (아래에 정의함)
+        yield return StartCoroutine(PostRequest(url, json));
+    }
+
+    // [API 2] 로그인
+    IEnumerator Login(string nick, string pw)
+    {
+        string url = baseUrl + "/login";
+        LoginData data = new LoginData { nickname = nick, password = pw };
+        string json = JsonUtility.ToJson(data);
+
+        yield return StartCoroutine(PostRequest(url, json));
+    }
+
+    // [API 3] 정보 수정
+    IEnumerator UpdateUserInfo(string nick, int charId)
+    {
+        string url = baseUrl + "/user/update";
+        UpdateData data = new UpdateData { nickname = nick, current_character_id = charId };
+        string json = JsonUtility.ToJson(data);
+
+        yield return StartCoroutine(PutRequest(url, json));
+    }
+
+    // [공통 함수] POST 요청 보내기 (코드 중복 줄이기용)
+    IEnumerator PostRequest(string url, string json)
+    {
+        UnityWebRequest request = new UnityWebRequest(url, "POST");
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
         yield return request.SendWebRequest();
 
-        // 4. 결과 확인
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("서버 응답: " + request.downloadHandler.text);
+            Debug.Log($"[{url}] 요청 성공: " + request.downloadHandler.text);
         }
         else
         {
-            Debug.LogError("에러 발생: " + request.error);
+            // 409(아이디중복), 401(비번틀림) 등의 에러 처리
+            Debug.LogError($"[{url}] 요청 실패: " + request.error + " / 내용: " + request.downloadHandler.text);
+        }
+    }
+    // [공통 함수] PUT 요청 보내기 (코드 중복 줄이기용)
+    IEnumerator PutRequest(string url, string json)
+    {
+        UnityWebRequest request = new UnityWebRequest(url, "PUT");
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log($"[{url}] 요청 성공: " + request.downloadHandler.text);
+        }
+        else
+        {
+            // 409(아이디중복), 401(비번틀림) 등의 에러 처리
+            Debug.LogError($"[{url}] 요청 실패: " + request.error + " / 내용: " + request.downloadHandler.text);
         }
     }
 }

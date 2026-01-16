@@ -5,24 +5,21 @@ using Mirror;
 public class CarController2D : NetworkBehaviour
 {
     [Header("이동 설정")]
-    public float moveSpeed = 12f;
-    public float rotationSpeed = 20f; // 회전 반응 속도
-
-    [Header("그래픽 설정")]
-    // 스프라이트가 원래 어디를 보고 있는지에 따라 조절 (0, -90, 90, 180 중 하나)
-    // 차 그림이 위를 보고 있다면 0 또는 -90을 시도해보세요.
-    public float spriteOffset = -90f;
-
-    [Header("스킬 설정")]
-    public float dashForce = 8f;
+    public float moveSpeed = 10f;
 
     private Rigidbody2D rb;
-    private Vector2 moveInput;
+    private Vector2 moveDir;
 
     public override void OnStartLocalPlayer()
     {
-        Camera.main.GetComponent<CameraFollow2D>().target = transform;
         GetComponent<SpriteRenderer>().color = Color.green;
+
+        // 🎥 시작 시 카메라 위치 강제 세팅 (기존 코드 유지)
+        if (Camera.main != null)
+        {
+            Camera.main.transform.position =
+                new Vector3(transform.position.x, transform.position.y, -10f);
+        }
     }
 
     void Start()
@@ -31,8 +28,7 @@ public class CarController2D : NetworkBehaviour
         rb.gravityScale = 0;
         rb.linearDamping = 0f;
 
-        // 🚨 중요: 물리 충돌로 인해 차가 뱅글뱅글 도는 것을 막습니다.
-        // 회전은 오직 스크립트로만 제어합니다.
+        // 회전은 코드로만 제어
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
     }
 
@@ -40,68 +36,47 @@ public class CarController2D : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        // 1️⃣ [입력] 화면 기준 절대 좌표 입력 (Local 아님!)
-        // 차의 회전값(transform.rotation)을 전혀 곱하지 않습니다.
-        float x = Input.GetAxisRaw("Horizontal");
-        float y = Input.GetAxisRaw("Vertical");
+        moveDir = Vector2.zero;
 
-        moveInput = new Vector2(x, y).normalized;
+        // ⬅️➡️⬆️⬇️ 절대 좌표 입력
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+            moveDir += Vector2.left;
 
-        if (Input.GetKeyDown(KeyCode.Z))
-        {
-            CmdDash();
-        }
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+            moveDir += Vector2.right;
+
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+            moveDir += Vector2.up;
+
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+            moveDir += Vector2.down;
+
+        moveDir = moveDir.normalized;
     }
 
     void FixedUpdate()
     {
         if (!isLocalPlayer) return;
-        Move();
+
+        if (moveDir == Vector2.zero)
+            return;
+
+        Vector2 targetPos =
+            rb.position + moveDir * moveSpeed * Time.fixedDeltaTime;
+
+        rb.MovePosition(targetPos);
     }
 
-    void Move()
+    // 🎥 카메라 따라가기 (기존 로직 그대로)
+    void LateUpdate()
     {
-        // 2️⃣ [이동] 키보드 방향 그대로 속도에 꽂아넣기
-        // 차가 180도 돌아있어도 moveInput이 (0, 1)이면 무조건 위로 갑니다.
-        if (moveInput.magnitude < 0.1f)
+        if (!isLocalPlayer) return;
+
+        if (Camera.main != null)
         {
-            rb.linearVelocity = Vector2.zero;
+            Vector3 targetPos = transform.position;
+            targetPos.z = -10f;
+            Camera.main.transform.position = targetPos;
         }
-        else
-        {
-            rb.linearVelocity = moveInput * moveSpeed; // 👈 여기가 핵심 (절대 이동)
-
-            // 3️⃣ [회전] 이동은 이동대로 하고, 차의 '그림'만 진행 방향을 보게 돌림
-            RotateSpriteToDirection();
-        }
-    }
-
-    void RotateSpriteToDirection()
-    {
-        // "이동하는 방향(moveInput)"을 바라보게 각도 계산
-        float targetAngle = Mathf.Atan2(moveInput.y, moveInput.x) * Mathf.Rad2Deg;
-
-        // 스프라이트 머리 방향 보정
-        targetAngle += spriteOffset;
-
-        // 부드럽게 회전 (Lerp)
-        // 만약 이것도 답답하면 rb.rotation = targetAngle; 로 바꾸면 칼같이 돕니다.
-        rb.rotation = Mathf.LerpAngle(rb.rotation, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-    }
-
-    [Command]
-    void CmdDash()
-    {
-        RpcDashEffect();
-    }
-
-    [ClientRpc]
-    void RpcDashEffect()
-    {
-        // 대시는 "현재 이동 중인 방향"으로 힘을 가함
-        // 멈춰있을 땐 차가 보는 방향(transform.up)으로
-        Vector2 dashDir = rb.linearVelocity.magnitude > 0.1f ? rb.linearVelocity.normalized : (Vector2)transform.up;
-
-        rb.AddForce(dashDir * dashForce, ForceMode2D.Impulse);
     }
 }

@@ -4,6 +4,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class CharacterData
@@ -61,9 +62,26 @@ public class ShopManager : MonoBehaviour
 
     void Start()
     {
+        // 인스펙터 오류로 버튼이 연결 안 될 경우를 대비해 코드로 직접 찾아서 연결
+        GameObject btnObj = GameObject.Find("GoToMainButton"); // 버튼 이름을 "GoToShopButton"으로 해주세요
+        if (btnObj != null)
+        {
+            Button btn = btnObj.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(OnClickMain);
+                Debug.Log("ShopManager: GoToMainButton 연결 성공!");
+            }
+        }
+
         StartCoroutine(LoadShopData());
     }
-
+    
+    public void OnClickMain()
+    {
+        SceneManager.LoadScene("Main");
+    }
     public IEnumerator LoadShopData()
     {
         yield return StartCoroutine(GetCharacters());

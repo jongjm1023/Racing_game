@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 129938557990891266}
   - component: {fileID: 2494246049973333918}
   - component: {fileID: 8745352272150820926}
+  - component: {fileID: 8790456463656803412}
   m_Layer: 0
   m_Name: PlayerCar
   m_TagString: Untagged
@@ -84,7 +85,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Sprite: {fileID: 8698248527754002512, guid: ef2b6973448d85348a6b4bcf9c8bb9e9, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -152,9 +153,9 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 12
-  maxSpeed: 15
+  moveSpeed: 10
   rotationSpeed: 8
+  spriteOffset: -90
   dashForce: 8
 --- !u!50 &2494246049973333918
 Rigidbody2D:
@@ -182,7 +183,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &8745352272150820926
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -200,12 +201,12 @@ MonoBehaviour:
   syncInterval: 0
   target: {fileID: 6596117548975551589}
   syncPosition: 1
-  syncRotation: 1
+  syncRotation: 0
   syncScale: 0
   onlySyncOnChange: 1
   compressRotation: 1
   interpolatePosition: 1
-  interpolateRotation: 1
+  interpolateRotation: 0
   interpolateScale: 1
   coordinateSpace: 0
   timelineOffset: 1
@@ -217,3 +218,17 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &8790456463656803412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4108600045980324644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7cdeae316656014aa64fb8840fd7787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  baseSpeed: 5
+  groundTilemap: {fileID: 0}

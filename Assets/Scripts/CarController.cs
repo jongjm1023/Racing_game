@@ -21,7 +21,7 @@ public class CarController2D : NetworkBehaviour
 
     public override void OnStartLocalPlayer()
     {
-        Camera.main.GetComponent<CameraFollow2D>().target = transform;
+        Camera.main.GetComponent<CameraFollow>().target = transform;
         GetComponent<SpriteRenderer>().color = Color.green;
     }
 

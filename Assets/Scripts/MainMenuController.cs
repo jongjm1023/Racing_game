@@ -17,8 +17,9 @@ public class MainMenuController : MonoBehaviour
             nickname = PlayerPrefs.GetString("Nickname");
             Debug.Log($"[MainMenu] 저장된 닉네임 로드: {nickname}");
             
-            // 이미 로그인된 상태라면 패널 숨김
+            // 이미 로그인된 상태라면 패널 숨김, 로그아웃 버튼 보임
             if (loginPanel != null) loginPanel.SetActive(false);
+            if (logoutButton != null) logoutButton.SetActive(true);
 
             if (currentSkinImage != null)
             {
@@ -30,6 +31,7 @@ public class MainMenuController : MonoBehaviour
             // 정보가 없으면 로드하지 않고 로그인 대기
             Debug.Log("[MainMenu] 저장된 닉네임이 없습니다. 로그인이 필요합니다.");
             if (loginPanel != null) loginPanel.SetActive(true);
+            if (logoutButton != null) logoutButton.SetActive(false);
         }
     }
 
@@ -82,6 +84,7 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Login UI")]
     public GameObject loginPanel; // [NEW] 로그인 화면
+    public GameObject logoutButton; // [NEW] 로그아웃 버튼 (로그인 전에는 숨김)
 
     private bool isGameStarting = false;
 
@@ -115,14 +118,6 @@ public class MainMenuController : MonoBehaviour
         {
             StartCoroutine(ResetMatchState());
         }
-
-        // [테스트용] F3 키를 누르면 로컬 저장 데이터(레지스트리) 초기화 (로그아웃 효과)
-        if (Input.GetKeyDown(KeyCode.F3))
-        {
-            PlayerPrefs.DeleteAll();
-            Debug.Log("레지스트리(PlayerPrefs) 초기화 완료! 씬을 재로드합니다.");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        }
     }
 
     // 매칭 상태 리셋 요청
@@ -133,7 +128,7 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("서버 매칭 대기열을 초기화했습니다.");
     }
 
-    // [NEW] 구글 로그인 버튼 클릭 시 연결
+    // 구글 로그인 버튼 클릭 시 연결
     public void OnClickGoogleLogin()
     {
         if (FirebaseAuthManager.Instance != null)
@@ -146,7 +141,7 @@ public class MainMenuController : MonoBehaviour
         }
     }
 
-    // [NEW] 로그인 성공 시 호출됨 (FirebaseAuthManager에서 부름)
+    // 로그인 성공 시 호출됨 (FirebaseAuthManager에서 부름)
     public void OnLoginSuccess(string userNickname)
     {
         Debug.Log($"[MainMenu] 로그인 성공! 환영합니다, {userNickname}님.");
@@ -156,6 +151,9 @@ public class MainMenuController : MonoBehaviour
         {
             loginPanel.SetActive(false);
             Debug.Log("[MainMenu] LoginPanel을 비활성화했습니다.");
+            
+            // 로그아웃 버튼 보이기
+            if (logoutButton != null) logoutButton.SetActive(true);
         }
         else
         {
@@ -178,6 +176,7 @@ public class MainMenuController : MonoBehaviour
         if (cancelMatchButton != null) cancelMatchButton.SetActive(true); // 취소 버튼 보이기
     }
     private bool isMatching = false; // 매칭 중복 방지
+
     // --- 스타트 버튼이 부를 함수 ---
     public void OnClickStart() 
     {
@@ -190,7 +189,7 @@ public class MainMenuController : MonoBehaviour
         StartCoroutine(RequestMatch());
     }
 
-    // --- [NEW] 매칭 취소 버튼 ---
+    // --- 매칭 취소 버튼 ---
     public void OnClickCancelMatch()
     {
         if (Mirror.NetworkManager.singleton != null)
@@ -279,6 +278,15 @@ public class MainMenuController : MonoBehaviour
     {
         SceneManager.LoadScene("SampleScene2");
     }
+
+    // --- 로그아웃 버튼이 부를 함수 ---
+    public void OnClickLogout()
+    {
+        PlayerPrefs.DeleteAll();
+        Debug.Log("레지스트리(PlayerPrefs) 초기화 완료! 씬을 재로드합니다.");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     // 왼쪽 현재 스킨 이미지 업데이트
     void UpdateCurrentSkinUI()
     {

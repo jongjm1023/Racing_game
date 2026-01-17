@@ -266,9 +266,9 @@ app.get('/reset_match', (req, res) => {
     console.log("매칭 상태가 초기화되었습니다.");
 });
 
-// 9. 매칭 취소
+// 10. Firebase 로그인(통합)
 app.get('/cancel_match', (req, res) => {
-    // 호스트가 취소했다고 가정하고 대기열 해제
+    // ... 기존 cancel_match 로직 유지 ...
     if (waitingHost) {
         waitingHost = false;
         res.send('매칭이 취소되었습니다.');
@@ -276,4 +276,86 @@ app.get('/cancel_match', (req, res) => {
     } else {
         res.send('대기 중인 매칭이 없습니다.');
     }
+});
+
+// [NEW] Firebase 인증 처리
+app.post('/auth/firebase', (req, res) => {
+    const { token, uid, email, name } = req.body;
+
+    // 원래는 여기서 'firebase-admin' 라이브러리로 'token'을 검증해야 안전합니다.
+    // 지금은 개발 단계이므로 클라이언트가 보낸 uid를 신뢰하고 진행합니다.
+    console.log(`[Firebase Login] UID: ${uid}, Email: ${email}, Name: ${name}`);
+
+    // DB에서 이 UID를 가진 유저가 있는지 확인
+    // (기존 users 테이블은 id/password 기반이라, firebase_uid 칼럼이 없으면 닉네임이나 이메일로 대체해야 함)
+    // 여기서는 간단히 '닉네임 = Firebase Name'으로 매핑해서 처리하거나
+    // 'firebase_' 접두어를 붙여 고유하게 만듭니다.
+
+    const dbNickname = name.replace(/\s/g, "") + "_" + uid.substring(0, 5); // 공백제거 + UID 일부
+
+    const querySelect = "SELECT * FROM users WHERE nickname = ?";
+    connection.query(querySelect, [dbNickname], (err, results) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send("DB Error");
+            return;
+        }
+
+        if (results.length > 0) {
+            // 이미 존재함 -> 로그인 성공
+            res.json(results[0]);
+            console.log("Firebase 재방문 유저 로그인: " + dbNickname);
+        } else {
+            // 없음 -> 회원가입 (초기 데이터 생성)
+
+            // 1. 기본 캐릭터(가장 ID 낮은 것) 찾기
+            connection.query('SELECT character_id FROM characters ORDER BY character_id ASC LIMIT 1', (errDef, charResults) => {
+                if (errDef) {
+                    console.error(errDef);
+                    return res.status(500).send("DB Error finding default char");
+                }
+
+                // 만약 캐릭터가 하나도 없다면? (에러 처리 혹은 더미 값)
+                // FK 제약조건 때문에 캐릭터가 없으면 유저 생성이 불가능할 수 있음.
+                let defaultCharId = (charResults.length > 0) ? charResults[0].character_id : null;
+
+                if (!defaultCharId) {
+                    return res.status(500).send("DB에 캐릭터가 하나도 없습니다. 관리자에게 문의하세요.");
+                }
+
+                const queryInsert = "INSERT INTO users (nickname, password, seed_money, current_character_id) VALUES (?, ?, ?, ?)";
+                // 비밀번호는 Firebase 유저라 없지만 DB 제약조건 때문에 임의값 넣음
+                // [FIX] 100 대신 defaultCharId 변수 사용
+                connection.query(queryInsert, [dbNickname, "firebase_user", 3000, defaultCharId], (err2, result2) => {
+                    if (err2) {
+                        console.error(err2);
+                        res.status(400).send("Register Error");
+                        return;
+                    }
+
+                    const newUserId = result2.insertId;
+
+                    // 기본 캐릭터 + 4번 캐릭터(있다면) 지급
+                    // 100, 102, 103, 104 대신 실제 존재하는 ID들로 지급하는 게 좋지만, 일단 기본 로직 유지하되 FK 체크 필요
+                    // 간단히: 방금 찾은 defaultCharId만 일단 지급
+
+                    const invValues = [[newUserId, defaultCharId]];
+
+                    connection.query("INSERT INTO user_inventory (user_id, character_id) VALUES ?", [invValues], (err3) => {
+                        if (err3) console.error("기본 지급 실패", err3);
+                    });
+
+                    // 방금 만든 유저 정보 리턴
+                    connection.query("SELECT * FROM users WHERE user_id = ?", [newUserId], (err4, finalResults) => {
+                        if (err4) {
+                            console.error("가입 후 조회 실패: " + err4);
+                            return res.status(500).send("DB Error");
+                        }
+                        res.json(finalResults[0]);
+                        console.log("Firebase 신규 유저 가입 완료: " + dbNickname);
+                    });
+                });
+            });
+        }
+    });
 });

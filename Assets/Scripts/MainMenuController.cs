@@ -11,13 +11,25 @@ public class MainMenuController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if (currentSkinImage == null)
+        // 저장된 닉네임이 있으면 불러오기
+        if (PlayerPrefs.HasKey("Nickname"))
         {
-            Debug.LogError("MainMenuController: Current Skin Image가 연결되지 않았습니다.");
+            nickname = PlayerPrefs.GetString("Nickname");
+            Debug.Log($"[MainMenu] 저장된 닉네임 로드: {nickname}");
+            
+            // 이미 로그인된 상태라면 패널 숨김
+            if (loginPanel != null) loginPanel.SetActive(false);
+
+            if (currentSkinImage != null)
+            {
+                StartCoroutine(LoadData());
+            }
         }
         else
         {
-            StartCoroutine(LoadData());
+            // 정보가 없으면 로드하지 않고 로그인 대기
+            Debug.Log("[MainMenu] 저장된 닉네임이 없습니다. 로그인이 필요합니다.");
+            if (loginPanel != null) loginPanel.SetActive(true);
         }
     }
 
@@ -40,7 +52,8 @@ public class MainMenuController : MonoBehaviour
         }
 
         // 2. 유저 정보 조회
-        UnityEngine.Networking.UnityWebRequest userRequest = UnityEngine.Networking.UnityWebRequest.Get("http://localhost:3000/users/" + nickname);
+        string userUrl = "http://localhost:3000/users/" + nickname;
+        UnityEngine.Networking.UnityWebRequest userRequest = UnityEngine.Networking.UnityWebRequest.Get(userUrl);
         yield return userRequest.SendWebRequest();
 
         if (userRequest.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
@@ -50,7 +63,15 @@ public class MainMenuController : MonoBehaviour
         }
         else
         {
-             Debug.LogError("유저 정보 로드 실패: " + userRequest.error);
+             // 404 등 에러 발생 시 처리
+             if (userRequest.responseCode == 404)
+             {
+                 Debug.LogWarning("유저 정보를 찾을 수 없습니다. (재로그인 필요)");
+             }
+             else
+             {
+                 Debug.LogError("유저 정보 로드 실패: " + userRequest.error);
+             }
         }
     }
 
@@ -58,6 +79,9 @@ public class MainMenuController : MonoBehaviour
     [Header("Lobby UI")]
     public GameObject lobbyPanel;      // "대기 중..." 패널
     public GameObject cancelMatchButton; // [NEW] 매칭 취소 버튼
+
+    [Header("Login UI")]
+    public GameObject loginPanel; // [NEW] 로그인 화면
 
     private bool isGameStarting = false;
 
@@ -81,6 +105,7 @@ public class MainMenuController : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.F1))
             {
                Debug.Log("F1 키 입력: 강제로 게임을 시작합니다.");
+               StartCoroutine(CancelMatchRequest());
                Mirror.NetworkManager.singleton.ServerChangeScene("SampleScene"); 
             }
         }
@@ -89,6 +114,14 @@ public class MainMenuController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F2))
         {
             StartCoroutine(ResetMatchState());
+        }
+
+        // [테스트용] F3 키를 누르면 로컬 저장 데이터(레지스트리) 초기화 (로그아웃 효과)
+        if (Input.GetKeyDown(KeyCode.F3))
+        {
+            PlayerPrefs.DeleteAll();
+            Debug.Log("레지스트리(PlayerPrefs) 초기화 완료! 씬을 재로드합니다.");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }
 
@@ -100,18 +133,57 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("서버 매칭 대기열을 초기화했습니다.");
     }
 
+    // [NEW] 구글 로그인 버튼 클릭 시 연결
+    public void OnClickGoogleLogin()
+    {
+        if (FirebaseAuthManager.Instance != null)
+        {
+            FirebaseAuthManager.Instance.OnClickGoogleLogin();
+        }
+        else
+        {
+            Debug.LogError("FirebaseAuthManager가 없습니다! 씬에 추가했는지 확인하세요.");
+        }
+    }
+
+    // [NEW] 로그인 성공 시 호출됨 (FirebaseAuthManager에서 부름)
+    public void OnLoginSuccess(string userNickname)
+    {
+        Debug.Log($"[MainMenu] 로그인 성공! 환영합니다, {userNickname}님.");
+        
+        // 로그인 패널 끄기
+        if (loginPanel != null) 
+        {
+            loginPanel.SetActive(false);
+            Debug.Log("[MainMenu] LoginPanel을 비활성화했습니다.");
+        }
+        else
+        {
+            Debug.LogError("[MainMenu] LoginPanel이 null입니다! 인스펙터를 확인하세요.");
+        }
+        
+        // ShopManager 등 다른 매니저 공유를 위해 저장
+        PlayerPrefs.SetString("Nickname", userNickname);
+        PlayerPrefs.Save();
+
+        // 로그인 성공 후 데이터 로드 시작
+        nickname = userNickname; // 로그인한 유저 닉네임으로 설정
+        StartCoroutine(LoadData());
+    }
+
     // 로비 UI 표시 로직 (버튼 로직 제거됨)
     void ShowLobbyUI(bool isHost)
     {
         if (lobbyPanel != null) lobbyPanel.SetActive(true);
         if (cancelMatchButton != null) cancelMatchButton.SetActive(true); // 취소 버튼 보이기
     }
-
     private bool isMatching = false; // 매칭 중복 방지
-
     // --- 스타트 버튼이 부를 함수 ---
     public void OnClickStart() 
     {
+        // 로그인 안 했으면 막기 (선택 사항)
+        // if (loginPanel.activeSelf) return;
+
         if (isMatching) return; // 이미 매칭 중이면 무시
 
         // 매칭 요청 시작
@@ -219,7 +291,12 @@ public class MainMenuController : MonoBehaviour
         if (equippedChar != null && !string.IsNullOrEmpty(equippedChar.image_url))
         {
             string baseName = equippedChar.image_url.Replace(".png", "");
-            string targetName = baseName + "_1"; // 메인메뉴도 _1 버전 사용
+            
+            // [NEW] 게임 씬에서 사용할 수 있게 저장 (차량 스킨 동기화용)
+            PlayerPrefs.SetString("SelectedSkin", baseName);
+            PlayerPrefs.Save(); // 즉시 저장
+
+            string targetName = baseName + "_1"; // 메인메뉴용 스킨 (옆모습 등)
             Sprite sprite = Resources.Load<Sprite>(targetName);
             
             if (sprite != null)

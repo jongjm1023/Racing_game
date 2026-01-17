@@ -4,13 +4,13 @@ using UnityEngine.Tilemaps; // 이게 없으면 Tilemap 단어를 못 알아듣�
 public class PlayerMovement : MonoBehaviour
 {
     public float baseSpeed = 5f;
-    public Tilemap groundTilemap; 
+    public Tilemap groundTilemap;
 
     void Start()
     {
         // [수정 포인트 1] GameObject를 찾고나서 -> 그 안의 Tilemap 컴포넌트를 꺼냄
-        GameObject mapObj = GameObject.Find("Tilemap"); 
-        if (mapObj != null) 
+        GameObject mapObj = GameObject.Find("Tilemap");
+        if (mapObj != null)
         {
             groundTilemap = mapObj.GetComponent<Tilemap>();
         }

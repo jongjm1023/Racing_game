@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 8745352272150820926}
   - component: {fileID: 8790456463656803412}
   - component: {fileID: 370093721264487521}
-  - component: {fileID: 5466583097451276494}
+  - component: {fileID: 2518743546032731676}
   m_Layer: 0
   m_Name: PlayerCar
   m_TagString: Untagged
@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 996714540
+  GlobalObjectIdHash: 911336254
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -157,6 +157,7 @@ MonoBehaviour:
   syncInterval: 0
   moveSpeed: 10
   rotationSpeed: 720
+  groundTilemap: {fileID: 0}
   visualTransform: {fileID: 0}
 --- !u!50 &2494246049973333918
 Rigidbody2D:
@@ -279,7 +280,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.82, y: 2.13}
   m_EdgeRadius: 0
---- !u!114 &5466583097451276494
+--- !u!114 &2518743546032731676
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -294,5 +295,5 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  currentLap: 1
+  currentLap: 0
   hasFinished: 0

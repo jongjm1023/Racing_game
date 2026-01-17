@@ -205,8 +205,7 @@ public class FirebaseAuthManager : MonoBehaviour
     // 4. 서버 통신 (Node.js로 토큰 전달)
     IEnumerator VerifyTokenWithServer(FirebaseUser firebaseUser)
     {
-        // 토큰 가져오기
-        var tokenTask = firebaseUser.TokenAsync(true);
+        var tokenTask = firebaseUser.TokenAsync(false);
         yield return new WaitUntil(() => tokenTask.IsCompleted);
 
         string idToken = tokenTask.Result;

@@ -92,10 +92,32 @@ public class CarController2D : NetworkBehaviour
         }
     }
 
+    // CarController2D.cs 내부
+
+    // 기존 FixedUpdate 윗부분에 추가
+    public void StopImmediately()
+    {
+        // 입력을 0으로 초기화
+        moveDir = Vector2.zero;
+
+        // 리지드바디 속도 즉시 제거
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.isKinematic = true; // 물리 영향 차단 (선택 사항)
+        }
+
+        // 스크립트 비활성화
+        this.enabled = false;
+    }
+
     void FixedUpdate()
     {
         if (!isLocalPlayer) return;
 
+        // moveDir가 Vector2.zero일 때 멈추는 로직이 이미 있지만, 
+        // 확실하게 하기 위해 위 함수를 호출하는 것이 좋습니다.
         if (moveDir == Vector2.zero)
         {
             rb.linearVelocity = Vector2.zero;

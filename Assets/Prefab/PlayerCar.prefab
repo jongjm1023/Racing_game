@@ -155,7 +155,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 10
+  moveSpeed: 1
   rotationSpeed: 720
   groundTilemap: {fileID: 0}
   visualTransform: {fileID: 0}

@@ -1,7 +1,7 @@
 # 달려달려 햄찌런
 
 
-
+<img width="1186" height="820" alt="Image" src="https://github.com/user-attachments/assets/b10e34fc-9f62-4092-acae-23a4cb5a346a" />
 ```
 더 간편히, 더 자세히 카이스트 지도
 ```

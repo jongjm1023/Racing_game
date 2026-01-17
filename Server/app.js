@@ -8,9 +8,9 @@ app.use(express.json()); // 유니티가 보낸 JSON 데이터를 읽을 수 있
 
 // 1. MySQL 연결 설정 
 const connection = mysql.createConnection({
-    host: process.env.DB_HOST,      
-    user: process.env.DB_USER,      
-    password: process.env.DB_PASS,  
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
     database: process.env.DB_NAME
 });
 
@@ -30,7 +30,7 @@ app.post('/register', (req, res) => {
 
     // 중복 닉네임 체크
     const insertSql = 'INSERT INTO users (nickname, password) VALUES (?, ?)';
-    
+
     connection.query(insertSql, [nickname, password], (err, result) => {
         if (err) {
             // 에러 코드가 1062면 중복 닉네임
@@ -39,7 +39,7 @@ app.post('/register', (req, res) => {
             }
             return res.status(500).send("서버 에러");
         }
-        
+
 
         res.json({ message: "회원가입 성공! 로그인 해주세요." });
     });
@@ -52,7 +52,7 @@ app.post('/login', (req, res) => {
 
     // 닉네임과 비밀번호가 둘 다 맞는 유저를 찾음
     const sql = 'SELECT * FROM users WHERE nickname = ? AND password = ?';
-    
+
     connection.query(sql, [nickname, password], (err, results) => {
         if (err) return res.status(500).send("DB 에러");
 
@@ -60,7 +60,7 @@ app.post('/login', (req, res) => {
             // 로그인 성공 (유저 정보 리턴)
             res.json({
                 message: "로그인 성공",
-                data: results[0] 
+                data: results[0]
             });
         } else {
             // 로그인 실패
@@ -71,10 +71,10 @@ app.post('/login', (req, res) => {
 
 // 6. 유저 캐릭터 수정
 app.put('/user/update', (req, res) => {
-    const { nickname, current_character_id} = req.body;
-    
+    const { nickname, current_character_id } = req.body;
+
     const updateSql = 'UPDATE users SET current_character_id = ? WHERE nickname = ?';
-    
+
     connection.query(updateSql, [current_character_id, nickname], (err, result) => {
         if (err) return res.status(500).send("업데이트 실패");
         res.json({ message: "정보 저장 완료" });
@@ -102,14 +102,14 @@ app.get('/characters', (req, res) => {
 // POST /characters - 캐릭터 추가 (관리자용)
 app.post('/characters', (req, res) => {
     const { name, price, stat_speed, image_url } = req.body;
-    connection.query('INSERT INTO characters (name, price, stat_speed, image_url) VALUES (?, ?, ?, ?)', 
+    connection.query('INSERT INTO characters (name, price, stat_speed, image_url) VALUES (?, ?, ?, ?)',
         [name, price, stat_speed, image_url], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('캐릭터 추가 실패');
-        }
-        res.status(201).json({ character_id: result.insertId, message: '캐릭터 추가 성공' });
-    });
+            if (err) {
+                console.error(err);
+                return res.status(500).send('캐릭터 추가 실패');
+            }
+            res.status(201).json({ character_id: result.insertId, message: '캐릭터 추가 성공' });
+        });
 });
 
 // DELETE /characters/:id - 캐릭터 삭제 (관리자용)

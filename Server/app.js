@@ -334,11 +334,6 @@ app.post('/auth/firebase', (req, res) => {
                     }
 
                     const newUserId = result2.insertId;
-
-                    // 기본 캐릭터 + 4번 캐릭터(있다면) 지급
-                    // 100, 102, 103, 104 대신 실제 존재하는 ID들로 지급하는 게 좋지만, 일단 기본 로직 유지하되 FK 체크 필요
-                    // 간단히: 방금 찾은 defaultCharId만 일단 지급
-
                     const invValues = [[newUserId, defaultCharId]];
 
                     connection.query("INSERT INTO user_inventory (user_id, character_id) VALUES ?", [invValues], (err3) => {

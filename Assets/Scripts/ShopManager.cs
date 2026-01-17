@@ -55,7 +55,7 @@ public class ShopManager : MonoBehaviour
     public Transform shopItemContainer;
     public GameObject shopItemPrefab;
 
-    private string nickname="racer_01"; // 테스트용 닉네임
+    private string nickname="racer_02"; // 테스트용 닉네임
     
     [Header("Assets/assets 스프라이트 목록")]
     public List<Sprite> characterSprites = new List<Sprite>();

@@ -26,10 +26,10 @@ public class ServerManager : MonoBehaviour
     IEnumerator TestRoutine()
     {
         // 1. 회원가입 시도
-        yield return StartCoroutine(Register("racer_01", "1234"));
+        yield return StartCoroutine(Register("racer_02", "1234"));
         
         // 2. 로그인 시도
-        yield return StartCoroutine(Login("racer_01", "1234"));
+        yield return StartCoroutine(Login("racer_02", "1234"));
 
         // 3. 정보 수정
         //yield return new WaitForSeconds(2.0f);

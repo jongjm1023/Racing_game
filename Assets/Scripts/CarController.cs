@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.SceneManagement; // 씬 관리 추가
 using Mirror;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -17,8 +18,25 @@ public class CarController2D : NetworkBehaviour
     private Vector2 moveDir;
     private float currentSpeedMultiplier = 1.0f;
 
+    void Awake()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        CheckVisibility(scene.name);
+    }
+
     void Start()
     {
+        CheckVisibility(SceneManager.GetActiveScene().name);
+
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0;
         rb.linearDamping = 0;
@@ -29,6 +47,28 @@ public class CarController2D : NetworkBehaviour
 
         if (groundTilemap == null)
             groundTilemap = GameObject.Find("Tilemap")?.GetComponent<Tilemap>();
+    }
+
+    // 씬 이름에 따라 숨기기/보이기 결정
+    void CheckVisibility(string sceneName)
+    {
+        bool isGameScene = (sceneName == "SampleScene"); // 게임 씬 체크
+
+        // 1. 렌더러 숨기기
+        foreach (var r in GetComponentsInChildren<Renderer>())
+        {
+            r.enabled = isGameScene;
+        }
+
+        // 2. 콜라이더 끄기
+        foreach (var c in GetComponentsInChildren<Collider2D>())
+        {
+            c.enabled = isGameScene;
+        }
+        
+        // 3. 스크립트 비활성화 (업데이트 멈춤) - 단, StopImmediately 호출에는 영향 없게 주의
+        // 여기서는 물리/입력 업데이트만 막기 위해 this.enabled를 씁니다.
+        this.enabled = isGameScene; 
     }
 
     void Update()

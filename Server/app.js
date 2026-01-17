@@ -40,8 +40,34 @@ app.post('/register', (req, res) => {
             return res.status(500).send("서버 에러");
         }
 
+        if (result) {
+            const userId = result.insertId; // 생성된 유저의 ID
 
-        res.json({ message: "회원가입 성공! 로그인 해주세요." });
+            // 4-1. 기본 캐릭터(가장 ID 낮은 것) 찾기
+            connection.query('SELECT character_id FROM characters ORDER BY character_id ASC LIMIT 1', (err, charResults) => {
+                if (err || charResults.length === 0) {
+                    // 캐릭터가 없으면 그냥 가입 성공 처리 (나중에 상점에서 사면 됨)
+                    return res.json({ message: "회원가입 성공! (기본 캐릭터 없음)" });
+                }
+
+                const defaultCharId = charResults[0].character_id;
+
+                // 4-2. 인벤토리에 기본 캐릭터 지급
+                connection.query('INSERT INTO user_inventory (user_id, character_id) VALUES (?, ?)', [userId, defaultCharId], (err) => {
+                    if (err) {
+                        console.error('기본 캐릭터 지급 실패:', err);
+                        return res.json({ message: "회원가입 성공! (캐릭터 지급 오류)" });
+                    }
+
+                    // 4-3. 기본 캐릭터 장착
+                    connection.query('UPDATE users SET current_character_id = ? WHERE user_id = ?', [defaultCharId, userId], (err) => {
+                        if (err) console.error('기본 캐릭터 장착 실패:', err);
+
+                        res.json({ message: "회원가입 성공! 기본 캐릭터가 지급되었습니다." });
+                    });
+                });
+            });
+        }
     });
 });
 
@@ -57,10 +83,38 @@ app.post('/login', (req, res) => {
         if (err) return res.status(500).send("DB 에러");
 
         if (results.length > 0) {
-            // 로그인 성공 (유저 정보 리턴)
-            res.json({
-                message: "로그인 성공",
-                data: results[0]
+            const user = results[0];
+
+            // 추가: 인벤토리 확인 (계정은 있는데 캐릭터가 없는 경우 방지)
+            connection.query('SELECT * FROM user_inventory WHERE user_id = ?', [user.user_id], (err, invResults) => {
+                if (!err && invResults.length === 0) {
+                    console.log(`[Login] ${user.nickname} 유저의 캐릭터가 없어 기본 캐릭터를 지급합니다.`);
+
+                    // 1. 기본 캐릭터 찾기
+                    connection.query('SELECT character_id FROM characters ORDER BY character_id ASC LIMIT 1', (err, charResults) => {
+                        if (err || charResults.length === 0) {
+                            return res.json({ message: "로그인 성공", data: user });
+                        }
+
+                        const defaultCharId = charResults[0].character_id;
+
+                        // 2. 지급
+                        connection.query('INSERT INTO user_inventory (user_id, character_id) VALUES (?, ?)', [user.user_id, defaultCharId], () => {
+                            // 3. 장착 업데이트
+                            connection.query('UPDATE users SET current_character_id = ? WHERE user_id = ?', [defaultCharId, user.user_id], () => {
+                                // 유저 정보 갱신해서 응답
+                                user.current_character_id = defaultCharId;
+                                res.json({ message: "로그인 성공 (기본 캐릭터 지급됨)", data: user });
+                            });
+                        });
+                    });
+                } else {
+                    // 정상적인 경우 (이미 캐릭터 있음)
+                    res.json({
+                        message: "로그인 성공",
+                        data: user
+                    });
+                }
             });
         } else {
             // 로그인 실패
@@ -186,4 +240,40 @@ app.post('/purchase', (req, res) => {
             });
         });
     });
+});
+
+// 8. 간단 매칭 시스템 (서버 메모리에 저장)
+let waitingHost = false;
+
+app.get('/match', (req, res) => {
+    if (waitingHost) {
+        // 이미 누군가 호스트로 대기 중 -> 클라이언트로 참여
+        waitingHost = false; // 매칭 성사 -> 대기 해제
+        res.json({ role: 'client', address: 'localhost' });
+        console.log("매칭 성사! 클라이언트로 입장시킵니다.");
+    } else {
+        // 대기 중인 사람이 없음 -> 호스트가 됨
+        waitingHost = true;
+        res.json({ role: 'host' });
+        console.log("매칭 대기열 생성. 호스트로 대기합니다.");
+    }
+});
+
+// [개발용] 매칭 상태 리셋 (F2키로 호출)
+app.get('/reset_match', (req, res) => {
+    waitingHost = false;
+    res.send('매칭 대기열 초기화 완료');
+    console.log("매칭 상태가 초기화되었습니다.");
+});
+
+// 9. 매칭 취소
+app.get('/cancel_match', (req, res) => {
+    // 호스트가 취소했다고 가정하고 대기열 해제
+    if (waitingHost) {
+        waitingHost = false;
+        res.send('매칭이 취소되었습니다.');
+        console.log("호스트가 매칭을 취소했습니다. 대기열 해제.");
+    } else {
+        res.send('대기 중인 매칭이 없습니다.');
+    }
 });

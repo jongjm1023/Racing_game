@@ -85,12 +85,12 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 8698248527754002512, guid: ef2b6973448d85348a6b4bcf9c8bb9e9, type: 3}
+  m_Sprite: {fileID: -4398183398628465896, guid: 5156b543da165c147b3b502591946eed, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1.82, y: 2.13}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -153,10 +153,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 10
-  rotationSpeed: 8
-  spriteOffset: -90
-  dashForce: 8
+  moveSpeed: 5
 --- !u!50 &2494246049973333918
 Rigidbody2D:
   serializedVersion: 5

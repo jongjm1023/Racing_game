@@ -64,7 +64,7 @@ public class ItemManager : NetworkBehaviour
         if (!isLocalPlayer) return;
 
         // X키 입력 로직
-        if (Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(KeyCode.Z))
         {
             if (isQteActive) return; // 미니게임 중엔 사용 불가
             if (itemQueue.Count == 0) return; // 아이템 없으면 사용 불가
@@ -179,13 +179,17 @@ public class ItemManager : NetworkBehaviour
 
         if (success)
         {
-            Debug.Log("성공! 부스트!");
-            carController.ApplySpeedBoost(15f, 2f);
+            Debug.Log("🎉 성공! 부스트 발동!");
+            // 원래 속도 + 15 (엄청 빨라짐)
+            carController.ApplySpeedBoost(15f, 1f);
         }
         else
         {
-            Debug.Log("실패! 스턴!");
-            carController.ApplyStun(2.0f);
+            Debug.Log("🐢 실패! 속도 감소!");
+
+            // [핵심 변경] 스턴 함수 삭제! -> 대신 속도를 깎아버림
+            // 기본 속도가 10이라면 -9를 해서 속도 1로 만듦 (거의 멈춤)
+            carController.ApplySpeedBoost(-9f, 2.0f);
         }
     }
 

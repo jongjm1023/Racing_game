@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Mirror;
-using System.Collections;
+using System.Collections; // 코루틴 사용을 위해 필수
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class CarController2D : NetworkBehaviour
@@ -17,19 +17,17 @@ public class CarController2D : NetworkBehaviour
     [Header("상태 정보 (확인용)")]
     public bool isStunned = false;       // 스턴 상태인가?
     public bool isShieldActive = false;  // 방어막이 켜져있는가?
-
-    // [수정] 인스펙터에서 볼 수 있게 public으로 두되, 수정은 코드에서만
-    public float addedSpeed = 0f;
+    private float addedSpeed = 0f; // 아이템으로 추가된 속도 (기본 0) // 아이템으로 인한 속도 변화 (기본 1.0)
 
     private Rigidbody2D rb;
     private Vector2 moveDir;
-    private float tileSpeedMultiplier = 1.0f;
+    private float tileSpeedMultiplier = 1.0f; // 타일 속도 배율
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0;
-        rb.linearDamping = 0; // 구버전 유니티면 drag 사용
+        rb.linearDamping = 0;
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
 
         if (visualTransform == null && transform.childCount > 0)
@@ -43,10 +41,10 @@ public class CarController2D : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        // 1. 스턴 상태면 입력도 받지 않음 (방향 고정)
+        // 1. 스턴 상태면 입력 차단
         if (isStunned)
         {
-            moveDir = Vector2.zero;
+            moveDir = Vector2.zero; // 이동 방향 초기화
             return;
         }
 
@@ -72,7 +70,16 @@ public class CarController2D : NetworkBehaviour
     private void UpdateTileSpeed()
     {
         if (groundTilemap == null) return;
-        // (필요 시 타일 속도 로직 추가)
+
+        Vector3Int cellPos = groundTilemap.WorldToCell(transform.position);
+        TileBase tile = groundTilemap.GetTile(cellPos);
+
+        // RoadTile 클래스가 있다면 사용, 없으면 태그나 이름으로 체크 가능
+        // 여기선 예시로 유지
+        // if (tile is RoadTile roadTile) tileSpeedMultiplier = roadTile.speedMultiplier;
+        // else tileSpeedMultiplier = 0.5f;
+
+        // (임시) 타일 로직이 없다면 기본 1.0
         tileSpeedMultiplier = 1.0f;
     }
 
@@ -95,98 +102,78 @@ public class CarController2D : NetworkBehaviour
         }
     }
 
-    // ==========================================
-    // [중요 수정] 물리 이동 처리 (스턴 로직 강화)
-    // ==========================================
     void FixedUpdate()
     {
         if (!isLocalPlayer) return;
 
-        // 1. 스턴 상태면 강제로 멈춤 (밀림 방지)
-        if (isStunned)
-        {
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f;
-            return; // 아래 이동 코드 실행 안 함
-        }
-
-        // 2. 입력이 없으면 멈춤
-        if (moveDir == Vector2.zero)
+        if (isStunned || moveDir == Vector2.zero)
         {
             rb.linearVelocity = Vector2.zero;
             return;
         }
 
-        // 3. 정상 이동 (기본속도 * 타일 + 아이템추가속도)
+        // [수정된 공식] (기본속도 * 타일배율) + 아이템추가속도
         float finalSpeed = (moveSpeed * tileSpeedMultiplier) + addedSpeed;
+
         rb.linearVelocity = moveDir * finalSpeed;
     }
 
     // ==========================================
-    // 아이템 효과 함수들
+    // 여기서부터 아이템 효과 관련 함수들 추가
     // ==========================================
 
+    // 1. 공격 당했을 때 (ItemManager에서 호출)
     public bool OnHit(ItemType attackType)
     {
         if (isShieldActive)
         {
-            Debug.Log("🛡️ 방어막으로 공격을 막았습니다!");
-            isShieldActive = false;
-            return false;
+            Debug.Log("방어막으로 막음!");
+            isShieldActive = false; // 방어막 소모
+            return false; // 공격 실패함
         }
-        return true;
+        return true; // 공격 성공함
     }
 
+    // 2. 속도 부스트 (대쉬, 햄찌 성공)
     public void ApplySpeedBoost(float amount, float duration)
     {
-        // 스턴 중에는 부스트 불가
-        if (isStunned) return;
-
-        // 기존 부스트가 있다면 멈추고 새로 시작 (중첩 방지)
-        StopCoroutine("SpeedBoostRoutine");
         StartCoroutine(SpeedBoostRoutine(amount, duration));
     }
 
     IEnumerator SpeedBoostRoutine(float amount, float duration)
     {
-        addedSpeed = amount; // 속도 더하기
-        // Debug.Log($"🚀 부스트! (+{amount})");
+        // [변경] 단순히 속도를 더해줍니다. (예: 10 + 5 = 15)
+        addedSpeed = amount;
+
+        // UI나 로그로 확인하고 싶다면
+        // Debug.Log($"부스트 온! 현재 추가 속도: {addedSpeed}");
 
         yield return new WaitForSeconds(duration);
 
         addedSpeed = 0f; // 원상복구
+                         // Debug.Log("부스트 종료");
     }
 
-    // [핵심 수정] 스턴 로직 강화
+    // 3. 스턴 (햄찌 실패)
     public void ApplyStun(float duration)
     {
-        // 스턴 걸리면 기존 부스트 효과 제거!
-        StopCoroutine("SpeedBoostRoutine");
-        addedSpeed = 0f;
-
-        // 기존 스턴이 있다면 멈추고 새로 시작 (시간 갱신)
-        StopCoroutine("StunRoutine");
         StartCoroutine(StunRoutine(duration));
     }
 
     IEnumerator StunRoutine(float duration)
     {
         isStunned = true;
-
-        // 물리적으로도 즉시 정지
-        rb.linearVelocity = Vector2.zero;
-
-        Debug.Log($"😵 으악! {duration}초간 스턴!");
+        Debug.Log("으악! 스턴!");
 
         yield return new WaitForSeconds(duration);
 
         isStunned = false;
-        Debug.Log("😅 스턴 풀림!");
+        Debug.Log("스턴 풀림");
     }
 
+    // 4. 방어막 활성
     public void ActivateShield(float duration)
     {
-        StopCoroutine("ShieldRoutine");
         StartCoroutine(ShieldRoutine(duration));
     }
 

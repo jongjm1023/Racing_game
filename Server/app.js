@@ -137,7 +137,7 @@ app.put('/user/update', (req, res) => {
 
 // 서버 실행
 app.listen(3000, () => {
-    console.log('서버 실행 중: http://localhost:3000');
+    console.log('서버 실행 중');
 });
 
 // 캐릭터 상점 API

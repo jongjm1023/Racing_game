@@ -110,7 +110,7 @@ public class ShopManager : MonoBehaviour
 
     IEnumerator GetCharacters()
     {
-        UnityWebRequest request = UnityWebRequest.Get("http://localhost:3000/characters");
+        UnityWebRequest request = UnityWebRequest.Get($"http://{MainMenuController.GetServerIP()}:3000/characters");
         yield return request.SendWebRequest();
         if (request.result == UnityWebRequest.Result.Success)
         {
@@ -127,7 +127,7 @@ public class ShopManager : MonoBehaviour
 
     IEnumerator GetUserData()
     {
-        UnityWebRequest request = UnityWebRequest.Get("http://localhost:3000/users/" + nickname);
+        UnityWebRequest request = UnityWebRequest.Get($"http://{MainMenuController.GetServerIP()}:3000/users/" + nickname);
         yield return request.SendWebRequest();
         if (request.result == UnityWebRequest.Result.Success)
         {
@@ -142,7 +142,7 @@ public class ShopManager : MonoBehaviour
 
     IEnumerator GetUserInventory()
     {
-        UnityWebRequest request = UnityWebRequest.Get("http://localhost:3000/user_inventory/" + nickname);
+        UnityWebRequest request = UnityWebRequest.Get($"http://{MainMenuController.GetServerIP()}:3000/user_inventory/" + nickname);
         yield return request.SendWebRequest();
         if (request.result == UnityWebRequest.Result.Success)
         {
@@ -275,7 +275,7 @@ public class ShopManager : MonoBehaviour
     {
         // 1. 서버에 장착 요청 (PUT /user/update)
         string json = $"{{\"nickname\":\"{nickname}\", \"current_character_id\":{charId}}}";
-        UnityWebRequest request = new UnityWebRequest("http://localhost:3000/user/update", "PUT");
+        UnityWebRequest request = new UnityWebRequest($"http://{MainMenuController.GetServerIP()}:3000/user/update", "PUT");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -307,7 +307,7 @@ public class ShopManager : MonoBehaviour
         string json = "{\"nickname\":\"" + nickname + "\", \"character_id\":" + charId + "}";
         Debug.Log($"[ShopManager] 구매 요청 데이터: {json}"); 
 
-        UnityWebRequest request = new UnityWebRequest("http://localhost:3000/purchase", "POST");
+        UnityWebRequest request = new UnityWebRequest($"http://{MainMenuController.GetServerIP()}:3000/purchase", "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();

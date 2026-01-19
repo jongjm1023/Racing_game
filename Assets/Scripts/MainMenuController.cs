@@ -163,9 +163,7 @@ public class MainMenuController : MonoBehaviour
         {
             loginPanel.SetActive(false);
             Debug.Log("[MainMenu] LoginPanel을 비활성화했습니다.");
-            
-            // 로그아웃 버튼 보이기
-            if (logoutButton != null) logoutButton.SetActive(true);
+        
         }
         else
         {
@@ -292,7 +290,48 @@ public class MainMenuController : MonoBehaviour
         SceneManager.LoadScene("SampleScene2");
     }
 
-    // --- 로그아웃 버튼이 부를 함수 ---
+    [Header("Settings UI")]
+    public GameObject settingsPanel;
+    public TMP_Text settingsIdText;
+    public UnityEngine.UI.Slider bgmSlider;
+    public UnityEngine.UI.Slider sfxSlider;
+
+    // --- 설정 버튼이 부를 함수 ---
+    public void OnClickOpenSettings()
+    {
+        if (settingsPanel == null) return;
+        
+        settingsPanel.SetActive(true);
+
+        // 1. ID 표시
+        if (settingsIdText != null) 
+            settingsIdText.text = $"ID: {nickname}";
+
+        // 2. 슬라이더 값 초기화 (AudioManager에서 가져오기)
+        if (AudioManager.instance != null)
+        {
+            if (bgmSlider != null) bgmSlider.value = AudioManager.instance.GetBGMVolume();
+            if (sfxSlider != null) sfxSlider.value = AudioManager.instance.GetSFXVolume();
+        }
+    }
+
+    public void OnClickCloseSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+    }
+
+    // 슬라이더 이벤트
+    public void OnChangedBGM(float value)
+    {
+        if (AudioManager.instance != null) AudioManager.instance.SetBGMVolume(value);
+    }
+
+    public void OnChangedSFX(float value)
+    {
+        if (AudioManager.instance != null) AudioManager.instance.SetSFXVolume(value);
+    }
+
+    // --- 로그아웃 버튼 (설정 패널 내) ---
     public void OnClickLogout()
     {
         PlayerPrefs.DeleteAll();

@@ -135,6 +135,20 @@ app.put('/user/update', (req, res) => {
     });
 });
 
+// [NEW] 게임 결과 보상 지급
+app.post('/reward', (req, res) => {
+    const { nickname, amount } = req.body;
+    console.log(`[Reward] ${nickname}에게 ${amount}원 지급 요청`);
+
+    connection.query('UPDATE users SET seed_money = seed_money + ? WHERE nickname = ?', [amount, nickname], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('보상 지급 실패');
+        }
+        res.json({ message: '보상 지급 완료' });
+    });
+});
+
 // 서버 실행
 app.listen(3000, () => {
     console.log('서버 실행 중');

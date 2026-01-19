@@ -72,21 +72,79 @@ public class GameUIManager : MonoBehaviour
 
         var lp = NetworkClient.localPlayer?.GetComponent<PlayerLapController>();
         string myId = NetworkClient.localPlayer.netId.ToString();
+        bool isWinner = (myId == LapManager.instance.winnerNetId);
 
-        if (myId == LapManager.instance.winnerNetId)
+        if (isWinner)
         {
-            resultText.text = "YOU WIN!";
+            resultText.text = "YOU WIN!\n(+100 Coin)\n";
             resultText.color = Color.yellow;
         }
         else if (lp != null && lp.hasFinished)
         {
-            resultText.text = "GOAL IN!";
+            resultText.text = "GOAL IN!\n(+50 Coin)\n";
             resultText.color = Color.green;
         }
         else
         {
-            resultText.text = "RETIRED\n(TIME OVER)";
+            resultText.text = "RETIRED\n(+50 Coin)\n";
             resultText.color = Color.red;
         }
+
+        // [NEW] 보상 지급 및 로비 복귀 프로세스 시작
+        StartCoroutine(ProcessEndGame(isWinner, lp != null && lp.hasFinished));
+    }
+
+    System.Collections.IEnumerator ProcessEndGame(bool isWinner, bool hasFinished)
+    {
+        // 1. 보상 계산 (우승 100, 나머지 50)
+        int rewardAmount = 50; 
+        if (isWinner) rewardAmount = 100;
+
+        Debug.Log($"[GameEnd] 결과: 승리={isWinner}, 완주={hasFinished} -> 보상: {rewardAmount}");
+
+        // 2. 서버에 보상 요청
+        string nickname = PlayerPrefs.GetString("Nickname", "");
+        if (!string.IsNullOrEmpty(nickname))
+        {
+            RewardRequest reqData = new RewardRequest { nickname = nickname, amount = rewardAmount };
+            string json = JsonUtility.ToJson(reqData);
+
+            string url = $"http://{MainMenuController.GetServerIP()}:3000/reward";
+            var request = new UnityEngine.Networking.UnityWebRequest(url, "POST");
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+            request.uploadHandler = new UnityEngine.Networking.UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new UnityEngine.Networking.DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"[GameEnd] 보상 {rewardAmount}원 지급 성공!");
+            }
+            else
+            {
+                Debug.LogError("[GameEnd] 보상 지급 실패: " + request.error);
+            }
+        }
+
+        // 3. 3초 대기 (결과 화면 감상)
+        yield return new WaitForSeconds(3f);
+
+        // 4. 로비로 복귀
+        Debug.Log("[GameEnd] 로비로 돌아갑니다.");
+        if (NetworkServer.active) Mirror.NetworkManager.singleton.StopHost();
+        else Mirror.NetworkManager.singleton.StopClient();
+
+        // [FIX] Mirror가 씬을 안 바꿔주면 강제로 이동 (0번 씬이 보통 메인 메뉴)
+        yield return new WaitForSeconds(0.5f);
+        UnityEngine.SceneManagement.SceneManager.LoadScene(0); 
+    }
+
+    [System.Serializable]
+    public class RewardRequest
+    {
+        public string nickname;
+        public int amount;
     }
 }

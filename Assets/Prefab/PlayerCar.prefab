@@ -18,9 +18,10 @@ GameObject:
   - component: {fileID: 8790456463656803412}
   - component: {fileID: 370093721264487521}
   - component: {fileID: 2518743546032731676}
+  - component: {fileID: 6522779740199261730}
   m_Layer: 0
   m_Name: PlayerCar
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -159,6 +160,8 @@ MonoBehaviour:
   rotationSpeed: 720
   groundTilemap: {fileID: 0}
   visualTransform: {fileID: 0}
+  isStunned: 0
+  isShieldActive: 0
 --- !u!50 &2494246049973333918
 Rigidbody2D:
   serializedVersion: 5
@@ -297,3 +300,25 @@ MonoBehaviour:
   syncInterval: 0
   currentLap: 0
   hasFinished: 0
+--- !u!114 &6522779740199261730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4108600045980324644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fffde60de2e2724cb60265ad34235b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemManager
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  carController: {fileID: 0}
+  enemyCarController: {fileID: 0}
+  inputItemSprites:
+  - {fileID: -5636343253877202797, guid: b74c2f83e9c722e44b705ddd92715dc5, type: 3}
+  - {fileID: -1311454706999046921, guid: ac11060ee5d5ded4bace01802679622a, type: 3}
+  - {fileID: 6612041103238939525, guid: 5fbdc06f16176d249b244b39898e745c, type: 3}
+  - {fileID: -5811498811225418235, guid: 9e78d789965fd45469064825e9dc25a9, type: 3}

@@ -104,7 +104,6 @@ GameObject:
   - component: {fileID: 129938557990891266}
   - component: {fileID: 2494246049973333918}
   - component: {fileID: 8745352272150820926}
-  - component: {fileID: 8790456463656803412}
   - component: {fileID: 370093721264487521}
   - component: {fileID: 2518743546032731676}
   - component: {fileID: 6522779740199261730}
@@ -188,13 +187,14 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 1
+  moveSpeed: 10
   rotationSpeed: 720
   groundTilemap: {fileID: 0}
   visualTransform: {fileID: 4320815928242873882}
   skinName: 
   isStunned: 0
   isShieldActive: 0
+  isRaceFinished: 0
 --- !u!50 &2494246049973333918
 Rigidbody2D:
   serializedVersion: 5
@@ -256,20 +256,6 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
---- !u!114 &8790456463656803412
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4108600045980324644}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7cdeae316656014aa64fb8840fd7787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  baseSpeed: 5
-  groundTilemap: {fileID: 0}
 --- !u!61 &370093721264487521
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -331,7 +317,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  currentLap: 0
+  currentLap: 1
   hasFinished: 0
 --- !u!114 &6522779740199261730
 MonoBehaviour:

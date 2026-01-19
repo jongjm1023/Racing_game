@@ -22,6 +22,7 @@ public class CarController2D : NetworkBehaviour
     [Header("상태 정보 (확인용)")]
     public bool isStunned = false;       // 스턴 상태인가?
     public bool isShieldActive = false;  // 방어막이 켜져있는가?
+    public bool isRaceFinished = false;  // [NEW] 완주했는가?
     private float addedSpeed = 0f; // 아이템으로 추가된 속도 (기본 0) // 아이템으로 인한 속도 변화 (기본 1.0)
 
     private Rigidbody2D rb;
@@ -138,34 +139,69 @@ public class CarController2D : NetworkBehaviour
         this.enabled = isGameScene; 
     }
 
+    [SyncVar] private float syncedRotationAngle; // [NEW] 서버에서 관리하는 회전 각도
+
     void Update()
     {
-        if (!isLocalPlayer) return;
-
-        // 1. 스턴 상태면 입력 차단
-        if (isStunned)
+        // 1. 로컬 플레이어 (내가 조종)
+        if (isLocalPlayer)
         {
-            moveDir = Vector2.zero; // 이동 방향 초기화
-            return;
+            // [NEW] 완주했거나 스턴이면 움직임 차단
+            if (isRaceFinished || isStunned)
+            {
+                moveDir = Vector2.zero;
+                return;
+            }
+
+            moveDir = Vector2.zero;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) moveDir += Vector2.left;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) moveDir += Vector2.right;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
+
+            moveDir = moveDir.normalized;
+
+            // [DEBUG] F4 누르면 속도 2배
+            if (Input.GetKeyDown(KeyCode.F4))
+            {
+                moveSpeed *= 2f;
+                Debug.Log($"[DEBUG] 속도 2배 증가! 현재 속도: {moveSpeed}");
+            }
+            // [DEBUG] F5 누르면 속도 절반
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                moveSpeed *= 0.5f;
+                Debug.Log($"[DEBUG] 속도 절반 감소! 현재 속도: {moveSpeed}");
+            }
+
+            UpdateTileSpeed();
+
+            if (moveDir != Vector2.zero)
+            {
+                HandleVisualRotation(moveDir);
+                
+                // [NEW] 내 각도를 서버로 전송 (다른 사람들도 보라고)
+                float currentAngle = Mathf.Atan2(moveDir.y, moveDir.x) * Mathf.Rad2Deg;
+                if (Mathf.Abs(currentAngle - syncedRotationAngle) > 1f) // 변경이 있을 때만 전송
+                {
+                    CmdUpdateRotation(currentAngle);
+                }
+            }
         }
-
-        // 2. 입력 받기
-        moveDir = Vector2.zero;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) moveDir += Vector2.left;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) moveDir += Vector2.right;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
-
-        moveDir = moveDir.normalized;
-
-        // 3. 타일 체크
-        UpdateTileSpeed();
-
-        // 4. 스프라이트 회전
-        if (moveDir != Vector2.zero)
+        // 2. 리모트 플레이어 (친구가 조종)
+        else
         {
-            HandleVisualRotation(moveDir);
+            // [NEW] 서버에서 온 각도로 부드럽게 회전
+            Quaternion targetRotation = Quaternion.Euler(0, 0, syncedRotationAngle + -90f); // -90f 보정 주의
+            visualTransform.rotation = Quaternion.RotateTowards(visualTransform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
+    }
+
+    // [NEW] 각도 동기화 명령
+    [Command]
+    void CmdUpdateRotation(float angle)
+    {
+        syncedRotationAngle = angle;
     }
 
     private void UpdateTileSpeed()
@@ -174,14 +210,14 @@ public class CarController2D : NetworkBehaviour
 
         Vector3Int cellPos = groundTilemap.WorldToCell(transform.position);
         TileBase tile = groundTilemap.GetTile(cellPos);
-
-        // RoadTile 클래스가 있다면 사용, 없으면 태그나 이름으로 체크 가능
-        // 여기선 예시로 유지
-        // if (tile is RoadTile roadTile) tileSpeedMultiplier = roadTile.speedMultiplier;
-        // else tileSpeedMultiplier = 0.5f;
-
-        // (임시) 타일 로직이 없다면 기본 1.0
-        tileSpeedMultiplier = 1.0f;
+        if (tile is RoadTile)
+        {
+            tileSpeedMultiplier = 1.0f;
+        }
+        else
+        {
+            tileSpeedMultiplier = 0.5f;
+        }
     }
 
     private void HandleVisualRotation(Vector2 dir)
@@ -206,6 +242,13 @@ public class CarController2D : NetworkBehaviour
     void FixedUpdate()
     {
         if (!isLocalPlayer) return;
+
+        // [NEW] 완주했으면 물리 정지
+        if (isRaceFinished)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
 
         if (isStunned || moveDir == Vector2.zero)
         {
@@ -283,5 +326,18 @@ public class CarController2D : NetworkBehaviour
         isShieldActive = true;
         yield return new WaitForSeconds(duration);
         isShieldActive = false;
+    }
+
+    // [NEW] 완주 처리 (0.8초 딜레이)
+    public void FinishRace()
+    {
+        StartCoroutine(StopAfterDelay());
+    }
+
+    IEnumerator StopAfterDelay()
+    {
+        yield return new WaitForSeconds(0.8f);
+        isRaceFinished = true;
+        Debug.Log("완주 후 0.8초 경과: 차량 정지");
     }
 }

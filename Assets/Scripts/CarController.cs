@@ -328,7 +328,7 @@ public class CarController2D : NetworkBehaviour
         isShieldActive = false;
     }
 
-    // [NEW] 완주 처리 (0.8초 딜레이)
+    // 완주 처리 
     public void FinishRace()
     {
         StartCoroutine(StopAfterDelay());
@@ -336,8 +336,7 @@ public class CarController2D : NetworkBehaviour
 
     IEnumerator StopAfterDelay()
     {
-        yield return new WaitForSeconds(0.8f);
+        yield return new WaitForSeconds(0.5f);
         isRaceFinished = true;
-        Debug.Log("완주 후 0.8초 경과: 차량 정지");
     }
 }

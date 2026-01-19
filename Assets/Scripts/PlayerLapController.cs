@@ -132,8 +132,11 @@ public class PlayerLapController : NetworkBehaviour
             rb.linearDamping = 10f;
         }
 
-        // 운전 스크립트가 있다면 꺼버리기
+        // 운전 스크립트가 있다면 완주 처리
         var car = GetComponent<CarController2D>();
-        if (car != null) car.enabled = false;
+        if (car != null) 
+        {
+            car.FinishRace(); // [FIX] 0.8초 딜레이 후 정지 함수 호출
+        }
     }
 }

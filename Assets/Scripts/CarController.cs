@@ -22,6 +22,7 @@ public class CarController2D : NetworkBehaviour
     [Header("상태 정보 (확인용)")]
     public bool isStunned = false;       // 스턴 상태인가?
     public bool isShieldActive = false;  // 방어막이 켜져있는가?
+    public bool isRaceFinished = false;  // [NEW] 완주했는가?
     private float addedSpeed = 0f; // 아이템으로 추가된 속도 (기본 0) // 아이템으로 인한 속도 변화 (기본 1.0)
 
     private Rigidbody2D rb;
@@ -145,7 +146,8 @@ public class CarController2D : NetworkBehaviour
         // 1. 로컬 플레이어 (내가 조종)
         if (isLocalPlayer)
         {
-            if (isStunned)
+            // [NEW] 완주했거나 스턴이면 움직임 차단
+            if (isRaceFinished || isStunned)
             {
                 moveDir = Vector2.zero;
                 return;
@@ -208,8 +210,14 @@ public class CarController2D : NetworkBehaviour
 
         Vector3Int cellPos = groundTilemap.WorldToCell(transform.position);
         TileBase tile = groundTilemap.GetTile(cellPos);
-
-        tileSpeedMultiplier = 1.0f;
+        if (tile is RoadTile)
+        {
+            tileSpeedMultiplier = 1.0f;
+        }
+        else
+        {
+            tileSpeedMultiplier = 0.5f;
+        }
     }
 
     private void HandleVisualRotation(Vector2 dir)
@@ -234,6 +242,13 @@ public class CarController2D : NetworkBehaviour
     void FixedUpdate()
     {
         if (!isLocalPlayer) return;
+
+        // [NEW] 완주했으면 물리 정지
+        if (isRaceFinished)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
 
         if (isStunned || moveDir == Vector2.zero)
         {
@@ -311,5 +326,18 @@ public class CarController2D : NetworkBehaviour
         isShieldActive = true;
         yield return new WaitForSeconds(duration);
         isShieldActive = false;
+    }
+
+    // [NEW] 완주 처리 (0.8초 딜레이)
+    public void FinishRace()
+    {
+        StartCoroutine(StopAfterDelay());
+    }
+
+    IEnumerator StopAfterDelay()
+    {
+        yield return new WaitForSeconds(0.8f);
+        isRaceFinished = true;
+        Debug.Log("완주 후 0.8초 경과: 차량 정지");
     }
 }

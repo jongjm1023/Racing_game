@@ -20,11 +20,13 @@ public class ShopAdminManager : MonoBehaviour
             CharacterList charList = JsonUtility.FromJson<CharacterList>("{\"characters\":" + json + "}");
             
             // 2. 없는 아이템만 골라서 추가하기
+            /*
             yield return StartCoroutine(CheckAndAdd("샘플 아이템1", 50, 1.5f, "player1.png", charList));
             yield return StartCoroutine(CheckAndAdd("샘플 아이템2", 100, 1.5f, "player2.png", charList));
             yield return StartCoroutine(CheckAndAdd("샘플 아이템3", 100, 1.5f, "player3.png", charList));
             yield return StartCoroutine(CheckAndAdd("샘플 아이템4", 200, 1.5f, "player4.png", charList));
             yield return StartCoroutine(CheckAndAdd("샘플 아이템5", 400, 1.5f, "player5.png", charList));
+            */
         }
         else
         {

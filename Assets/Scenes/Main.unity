@@ -5340,6 +5340,7 @@ GameObject:
   - component: {fileID: 1632976409}
   - component: {fileID: 1632976408}
   - component: {fileID: 1632976407}
+  - component: {fileID: 1632976410}
   m_Layer: 5
   m_Name: MatchingText
   m_TagString: Untagged
@@ -5367,7 +5368,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB9E4\uCE6D \uC911..."
+  m_text: "\uB9E4\uCE6D \uC911"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2ea18c54f4785274ea396c1d41f9bbf9, type: 2}
   m_sharedMaterial: {fileID: 8467946422552576396, guid: 2ea18c54f4785274ea396c1d41f9bbf9, type: 2}
@@ -5465,6 +5466,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 50}
   m_SizeDelta: {x: 600, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1632976410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1632976406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f814a525a04d6c45bb52f7e81b3602f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MatchingTextAnim
+  targetText: {fileID: 1632976407}
+  speed: 0.5
 --- !u!1 &1678680384
 GameObject:
   m_ObjectHideFlags: 0
@@ -5618,7 +5633,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1704024539
 RectTransform:
   m_ObjectHideFlags: 0

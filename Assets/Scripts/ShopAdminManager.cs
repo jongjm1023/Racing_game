@@ -11,7 +11,7 @@ public class ShopAdminManager : MonoBehaviour
         Debug.Log("관리자: 아이템 점검 및 추가 시작 (기존 데이터 유지)...");
 
         // 1. 기존 아이템 조회
-        UnityWebRequest request = UnityWebRequest.Get("http://localhost:3000/characters");
+        UnityWebRequest request = UnityWebRequest.Get($"http://{MainMenuController.GetServerIP()}:3000/characters");
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)
@@ -55,7 +55,7 @@ public class ShopAdminManager : MonoBehaviour
     IEnumerator AddItemToServer(string name, int price, float speed, string imageName)
     {
         string json = $"{{\"name\":\"{name}\", \"price\":{price}, \"stat_speed\":{speed}, \"image_url\":\"{imageName}\"}}";
-        UnityWebRequest request = new UnityWebRequest("http://localhost:3000/characters", "POST");
+        UnityWebRequest request = new UnityWebRequest($"http://{MainMenuController.GetServerIP()}:3000/characters", "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -72,7 +72,7 @@ public class ShopAdminManager : MonoBehaviour
     // 아이템 삭제 (필요할 때만 호출)
     public IEnumerator RemoveItemFromServer(int characterId)
     {
-        UnityWebRequest request = UnityWebRequest.Delete("http://localhost:3000/characters/" + characterId);
+        UnityWebRequest request = UnityWebRequest.Delete($"http://{MainMenuController.GetServerIP()}:3000/characters/" + characterId);
         yield return request.SendWebRequest();
         if (request.result == UnityWebRequest.Result.Success)
         {

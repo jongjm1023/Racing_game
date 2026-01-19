@@ -9,11 +9,12 @@ public class UpdateData { public string nickname; public int current_character_i
 
 public class ServerManager : MonoBehaviour
 {
-    string baseUrl = "http://localhost:3000";
+    // [FIX] 동적 IP 사용
+    string getBaseUrl() { return $"http://{MainMenuController.GetServerIP()}:3000"; }
     // [API 3] 정보 수정
     IEnumerator UpdateUserInfo(string nick, int charId)
     {
-        string url = baseUrl + "/user/update";
+        string url = getBaseUrl() + "/user/update";
         UpdateData data = new UpdateData { nickname = nick, current_character_id = charId };
         string json = JsonUtility.ToJson(data);
 

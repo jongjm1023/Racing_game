@@ -1,9 +1,21 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 public class MainMenuController : MonoBehaviour
 {
     public UnityEngine.UI.Image currentSkinImage; // 인스펙터에서 연결 필요
     
+    // IP 주소 가셔오는 헬퍼 함수
+    // [CHANGE] 인스펙터가 아닌 코드로 직접 제어 (private static)
+    // 친구 컴퓨터(방장)의 IP를 여기에 직접 적으세요! 
+    private static string serverIP = "10.249.18.68"; 
+
+    // IP 주소 가져오는 헬퍼 함수
+    public static string GetServerIP()
+    {
+        return !string.IsNullOrEmpty(serverIP) ? serverIP : "localhost";
+    }
+
     private string nickname = "racer_02"; // 테스트용 닉네임 (나중에 로그인 연동 필요)
     private UserData userData;
     private System.Collections.Generic.List<CharacterData> allCharacters = new System.Collections.Generic.List<CharacterData>();
@@ -39,7 +51,7 @@ public class MainMenuController : MonoBehaviour
     System.Collections.IEnumerator LoadData()
     {
         // 1. 캐릭터 목록 조회
-        UnityEngine.Networking.UnityWebRequest charRequest = UnityEngine.Networking.UnityWebRequest.Get("http://localhost:3000/characters");
+        UnityEngine.Networking.UnityWebRequest charRequest = UnityEngine.Networking.UnityWebRequest.Get($"http://{GetServerIP()}:3000/characters");
         yield return charRequest.SendWebRequest();
 
         if (charRequest.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
@@ -54,7 +66,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         // 2. 유저 정보 조회
-        string userUrl = "http://localhost:3000/users/" + nickname;
+        string userUrl = $"http://{GetServerIP()}:3000/users/" + nickname;
         UnityEngine.Networking.UnityWebRequest userRequest = UnityEngine.Networking.UnityWebRequest.Get(userUrl);
         yield return userRequest.SendWebRequest();
 
@@ -81,6 +93,7 @@ public class MainMenuController : MonoBehaviour
     [Header("Lobby UI")]
     public GameObject lobbyPanel;      // "대기 중..." 패널
     public GameObject cancelMatchButton; // [NEW] 매칭 취소 버튼
+    // public TMP_InputField ipInputField; // [REMOVED] 코드 변수로 대체됨
 
     [Header("Login UI")]
     public GameObject loginPanel; // [NEW] 로그인 화면
@@ -123,7 +136,7 @@ public class MainMenuController : MonoBehaviour
     // 매칭 상태 리셋 요청
     System.Collections.IEnumerator ResetMatchState()
     {
-        UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get("http://localhost:3000/reset_match");
+        UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get($"http://{GetServerIP()}:3000/reset_match");
         yield return request.SendWebRequest();
         Debug.Log("서버 매칭 대기열을 초기화했습니다.");
     }
@@ -217,7 +230,7 @@ public class MainMenuController : MonoBehaviour
     
     System.Collections.IEnumerator CancelMatchRequest()
     {
-        UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get("http://localhost:3000/cancel_match");
+        UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get($"http://{GetServerIP()}:3000/cancel_match");
         yield return request.SendWebRequest();
         Debug.Log("서버에 매칭 취소를 요청했습니다.");
     }
@@ -229,7 +242,7 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("매칭 시작! 서버에 역할을 요청합니다...");
         
         // 1. 서버에 매칭 요청 (GET /match)
-        UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get("http://localhost:3000/match");
+        UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get($"http://{GetServerIP()}:3000/match");
         yield return request.SendWebRequest();
 
         if (request.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
@@ -254,8 +267,9 @@ public class MainMenuController : MonoBehaviour
             }
             else if (response.role == "client")
             {
-                Debug.Log($"당신은 클라이언트입니다! {response.address}로 접속합니다.");
-                Mirror.NetworkManager.singleton.networkAddress = response.address;
+                string connectIp = GetServerIP();
+                Debug.Log($"당신은 클라이언트입니다! {connectIp}로 접속합니다.");
+                Mirror.NetworkManager.singleton.networkAddress = connectIp;
                 Mirror.NetworkManager.singleton.StartClient();
                 ShowLobbyUI(false); // 클라이언트는 대기
             }

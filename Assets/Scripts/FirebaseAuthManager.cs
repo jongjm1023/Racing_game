@@ -218,7 +218,11 @@ public class FirebaseAuthManager : MonoBehaviour
         // JSON 데이터 생성
         string json = $"{{\"token\":\"{idToken}\", \"uid\":\"{uid}\", \"email\":\"{email}\", \"name\":\"{name}\"}}";
 
-        UnityWebRequest request = new UnityWebRequest($"{serverUrl}/auth/firebase", "POST");
+        // [FIX] MainMenuController에 설정된 IP를 가져와서 사용
+        string host = MainMenuController.GetServerIP();
+        string url = $"http://{host}:3000/auth/firebase";
+
+        UnityWebRequest request = new UnityWebRequest(url, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();

@@ -40,8 +40,34 @@ app.post('/register', (req, res) => {
             return res.status(500).send("서버 에러");
         }
 
+        if (result) {
+            const userId = result.insertId; // 생성된 유저의 ID
 
-        res.json({ message: "회원가입 성공! 로그인 해주세요." });
+            // 4-1. 기본 캐릭터(가장 ID 낮은 것) 찾기
+            connection.query('SELECT character_id FROM characters ORDER BY character_id ASC LIMIT 1', (err, charResults) => {
+                if (err || charResults.length === 0) {
+                    // 캐릭터가 없으면 그냥 가입 성공 처리 (나중에 상점에서 사면 됨)
+                    return res.json({ message: "회원가입 성공! (기본 캐릭터 없음)" });
+                }
+
+                const defaultCharId = charResults[0].character_id;
+
+                // 4-2. 인벤토리에 기본 캐릭터 지급
+                connection.query('INSERT INTO user_inventory (user_id, character_id) VALUES (?, ?)', [userId, defaultCharId], (err) => {
+                    if (err) {
+                        console.error('기본 캐릭터 지급 실패:', err);
+                        return res.json({ message: "회원가입 성공! (캐릭터 지급 오류)" });
+                    }
+
+                    // 4-3. 기본 캐릭터 장착
+                    connection.query('UPDATE users SET current_character_id = ? WHERE user_id = ?', [defaultCharId, userId], (err) => {
+                        if (err) console.error('기본 캐릭터 장착 실패:', err);
+
+                        res.json({ message: "회원가입 성공! 기본 캐릭터가 지급되었습니다." });
+                    });
+                });
+            });
+        }
     });
 });
 
@@ -57,10 +83,38 @@ app.post('/login', (req, res) => {
         if (err) return res.status(500).send("DB 에러");
 
         if (results.length > 0) {
-            // 로그인 성공 (유저 정보 리턴)
-            res.json({
-                message: "로그인 성공",
-                data: results[0]
+            const user = results[0];
+
+            // 추가: 인벤토리 확인 (계정은 있는데 캐릭터가 없는 경우 방지)
+            connection.query('SELECT * FROM user_inventory WHERE user_id = ?', [user.user_id], (err, invResults) => {
+                if (!err && invResults.length === 0) {
+                    console.log(`[Login] ${user.nickname} 유저의 캐릭터가 없어 기본 캐릭터를 지급합니다.`);
+
+                    // 1. 기본 캐릭터 찾기
+                    connection.query('SELECT character_id FROM characters ORDER BY character_id ASC LIMIT 1', (err, charResults) => {
+                        if (err || charResults.length === 0) {
+                            return res.json({ message: "로그인 성공", data: user });
+                        }
+
+                        const defaultCharId = charResults[0].character_id;
+
+                        // 2. 지급
+                        connection.query('INSERT INTO user_inventory (user_id, character_id) VALUES (?, ?)', [user.user_id, defaultCharId], () => {
+                            // 3. 장착 업데이트
+                            connection.query('UPDATE users SET current_character_id = ? WHERE user_id = ?', [defaultCharId, user.user_id], () => {
+                                // 유저 정보 갱신해서 응답
+                                user.current_character_id = defaultCharId;
+                                res.json({ message: "로그인 성공 (기본 캐릭터 지급됨)", data: user });
+                            });
+                        });
+                    });
+                } else {
+                    // 정상적인 경우 (이미 캐릭터 있음)
+                    res.json({
+                        message: "로그인 성공",
+                        data: user
+                    });
+                }
             });
         } else {
             // 로그인 실패
@@ -185,5 +239,118 @@ app.post('/purchase', (req, res) => {
                 });
             });
         });
+    });
+});
+
+// 8. 간단 매칭 시스템 (서버 메모리에 저장)
+let waitingHost = false;
+
+app.get('/match', (req, res) => {
+    if (waitingHost) {
+        // 이미 누군가 호스트로 대기 중 -> 클라이언트로 참여
+        waitingHost = false; // 매칭 성사 -> 대기 해제
+        res.json({ role: 'client', address: 'localhost' });
+        console.log("매칭 성사! 클라이언트로 입장시킵니다.");
+    } else {
+        // 대기 중인 사람이 없음 -> 호스트가 됨
+        waitingHost = true;
+        res.json({ role: 'host' });
+        console.log("매칭 대기열 생성. 호스트로 대기합니다.");
+    }
+});
+
+// [개발용] 매칭 상태 리셋 (F2키로 호출)
+app.get('/reset_match', (req, res) => {
+    waitingHost = false;
+    res.send('매칭 대기열 초기화 완료');
+    console.log("매칭 상태가 초기화되었습니다.");
+});
+
+// 10. Firebase 로그인(통합)
+app.get('/cancel_match', (req, res) => {
+    // ... 기존 cancel_match 로직 유지 ...
+    if (waitingHost) {
+        waitingHost = false;
+        res.send('매칭이 취소되었습니다.');
+        console.log("호스트가 매칭을 취소했습니다. 대기열 해제.");
+    } else {
+        res.send('대기 중인 매칭이 없습니다.');
+    }
+});
+
+// [NEW] Firebase 인증 처리
+app.post('/auth/firebase', (req, res) => {
+    const { token, uid, email, name } = req.body;
+
+    // 원래는 여기서 'firebase-admin' 라이브러리로 'token'을 검증해야 안전합니다.
+    // 지금은 개발 단계이므로 클라이언트가 보낸 uid를 신뢰하고 진행합니다.
+    console.log(`[Firebase Login] UID: ${uid}, Email: ${email}, Name: ${name}`);
+
+    // DB에서 이 UID를 가진 유저가 있는지 확인
+    // (기존 users 테이블은 id/password 기반이라, firebase_uid 칼럼이 없으면 닉네임이나 이메일로 대체해야 함)
+    // 여기서는 간단히 '닉네임 = Firebase Name'으로 매핑해서 처리하거나
+    // 'firebase_' 접두어를 붙여 고유하게 만듭니다.
+
+    const dbNickname = name.replace(/\s/g, "") + "_" + uid.substring(0, 5); // 공백제거 + UID 일부
+
+    const querySelect = "SELECT * FROM users WHERE nickname = ?";
+    connection.query(querySelect, [dbNickname], (err, results) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send("DB Error");
+            return;
+        }
+
+        if (results.length > 0) {
+            // 이미 존재함 -> 로그인 성공
+            res.json(results[0]);
+            console.log("Firebase 재방문 유저 로그인: " + dbNickname);
+        } else {
+            // 없음 -> 회원가입 (초기 데이터 생성)
+
+            // 1. 기본 캐릭터(가장 ID 낮은 것) 찾기
+            connection.query('SELECT character_id FROM characters ORDER BY character_id ASC LIMIT 1', (errDef, charResults) => {
+                if (errDef) {
+                    console.error(errDef);
+                    return res.status(500).send("DB Error finding default char");
+                }
+
+                // 만약 캐릭터가 하나도 없다면? (에러 처리 혹은 더미 값)
+                // FK 제약조건 때문에 캐릭터가 없으면 유저 생성이 불가능할 수 있음.
+                let defaultCharId = (charResults.length > 0) ? charResults[0].character_id : null;
+
+                if (!defaultCharId) {
+                    return res.status(500).send("DB에 캐릭터가 하나도 없습니다. 관리자에게 문의하세요.");
+                }
+
+                const queryInsert = "INSERT INTO users (nickname, password, seed_money, current_character_id) VALUES (?, ?, ?, ?)";
+                // 비밀번호는 Firebase 유저라 없지만 DB 제약조건 때문에 임의값 넣음
+                // [FIX] 100 대신 defaultCharId 변수 사용
+                connection.query(queryInsert, [dbNickname, "firebase_user", 3000, defaultCharId], (err2, result2) => {
+                    if (err2) {
+                        console.error(err2);
+                        res.status(400).send("Register Error");
+                        return;
+                    }
+
+                    const newUserId = result2.insertId;
+                    const invValues = [[newUserId, defaultCharId]];
+
+                    connection.query("INSERT INTO user_inventory (user_id, character_id) VALUES ?", [invValues], (err3) => {
+                        if (err3) console.error("기본 지급 실패", err3);
+                    });
+
+                    // 방금 만든 유저 정보 리턴
+                    connection.query("SELECT * FROM users WHERE user_id = ?", [newUserId], (err4, finalResults) => {
+                        if (err4) {
+                            console.error("가입 후 조회 실패: " + err4);
+                            return res.status(500).send("DB Error");
+                        }
+                        res.json(finalResults[0]);
+                        console.log("Firebase 신규 유저 가입 완료: " + dbNickname);
+                    });
+                });
+            });
+        }
     });
 });

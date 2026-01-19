@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.SceneManagement; // 씬 관리 추가
 using Mirror;
 using System.Collections; // 코루틴 사용을 위해 필수
 
@@ -13,6 +14,10 @@ public class CarController2D : NetworkBehaviour
 
     [Header("시각적 회전 대상")]
     public Transform visualTransform;
+    private SpriteRenderer spriteRenderer; // [NEW] 스프라이트 렌더러 캐싱
+
+    [SyncVar(hook = nameof(OnSkinChanged))] // [NEW] 스킨 이름 동기화
+    public string skinName = "";
 
     [Header("상태 정보 (확인용)")]
     public bool isStunned = false;       // 스턴 상태인가?
@@ -23,8 +28,25 @@ public class CarController2D : NetworkBehaviour
     private Vector2 moveDir;
     private float tileSpeedMultiplier = 1.0f; // 타일 속도 배율
 
+    void Awake()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        CheckVisibility(scene.name);
+    }
+
     void Start()
     {
+        CheckVisibility(SceneManager.GetActiveScene().name);
+
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0;
         rb.linearDamping = 0;
@@ -33,8 +55,87 @@ public class CarController2D : NetworkBehaviour
         if (visualTransform == null && transform.childCount > 0)
             visualTransform = transform.GetChild(0);
 
+        if (visualTransform != null)
+            spriteRenderer = visualTransform.GetComponent<SpriteRenderer>();
+
         if (groundTilemap == null)
             groundTilemap = GameObject.Find("Tilemap")?.GetComponent<Tilemap>();
+
+        // [NEW] 내 캐릭터라면, 저장된 스킨을 서버에 알림
+        if (isLocalPlayer)
+        {
+             // MainMenuController에서 저장한 스킨 이름 불러오기
+             string savedSkin = PlayerPrefs.GetString("SelectedSkin", "");
+             if (!string.IsNullOrEmpty(savedSkin))
+             {
+                 Debug.Log($"[CarController] 스킨 적용 요청: {savedSkin}");
+                 CmdSetSkin(savedSkin);
+             }
+        }
+    }
+
+    // [NEW] 서버에 스킨 변경 요청
+    [Command]
+    void CmdSetSkin(string newSkinName)
+    {
+        Debug.Log($"[Server] CmdSetSkin called. Old: {skinName}, New: {newSkinName}");
+        skinName = newSkinName; // 서버에서 변경 -> 모든 클라이언트에 OnSkinChanged 호출됨
+    }
+
+    // [NEW] 스킨 변경 훅 (모든 클라이언트에서 실행)
+    void OnSkinChanged(string oldName, string newName)
+    {
+        Debug.Log($"[Client] OnSkinChanged: '{oldName}' -> '{newName}'");
+
+        if (string.IsNullOrEmpty(newName)) return;
+
+        // 리소스에서 스프라이트 로드
+        Sprite sprite = Resources.Load<Sprite>(newName);
+        
+        if (sprite != null)
+        {
+            // 아직 Start()가 안 돌아서 변수가 비었을 수 있음 -> 직접 찾기
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            }
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.sprite = sprite;
+                // Debug.Log($"[Client] 스프라이트 적용 성공: {newName}");
+            }
+            else
+            {
+                Debug.LogError("[Client] SpriteRenderer를 자식 오브젝트에서 찾을 수 없습니다!");
+            }
+        }
+        else
+        {
+            Debug.LogError($"[Client] Resources.Load 실패! 이름: '{newName}' (파일이 Resources 폴더에 있는지, 오타가 없는지 확인하세요)");
+        }
+    }
+
+    // 씬 이름에 따라 숨기기/보이기 결정
+    void CheckVisibility(string sceneName)
+    {
+        bool isGameScene = (sceneName == "SampleScene"); // 게임 씬 체크
+
+        // 1. 렌더러 숨기기
+        foreach (var r in GetComponentsInChildren<Renderer>())
+        {
+            r.enabled = isGameScene;
+        }
+
+        // 2. 콜라이더 끄기
+        foreach (var c in GetComponentsInChildren<Collider2D>())
+        {
+            c.enabled = isGameScene;
+        }
+        
+        // 3. 스크립트 비활성화 (업데이트 멈춤) - 단, StopImmediately 호출에는 영향 없게 주의
+        // 여기서는 물리/입력 업데이트만 막기 위해 this.enabled를 씁니다.
+        this.enabled = isGameScene; 
     }
 
     void Update()

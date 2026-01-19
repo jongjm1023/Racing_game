@@ -55,7 +55,7 @@ public class ShopManager : MonoBehaviour
     public Transform shopItemContainer;
     public GameObject shopItemPrefab;
 
-    private string nickname="racer_01"; // 테스트용 닉네임
+    private string nickname; // PlayerPrefs에서 로드함
     
     [Header("Assets/assets 스프라이트 목록")]
     public List<Sprite> characterSprites = new List<Sprite>();
@@ -77,6 +77,18 @@ public class ShopManager : MonoBehaviour
                 btn.onClick.AddListener(OnClickMain);
                 Debug.Log("ShopManager: GoToMainButton 연결 성공!");
             }
+        }
+
+        // [NEW] 로그인한 닉네임 가져오기
+        if (PlayerPrefs.HasKey("Nickname"))
+        {
+            nickname = PlayerPrefs.GetString("Nickname");
+            Debug.Log($"[ShopManager] 로그인된 유저: {nickname}");
+        }
+        else
+        {
+            nickname = "racer_02"; // 로그인 안 했으면 기본 테스트 계정 사용
+            Debug.LogWarning("[ShopManager] 로그인 정보가 없어 테스트 계정(racer_02)을 사용합니다.");
         }
 
         StartCoroutine(LoadShopData());

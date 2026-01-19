@@ -5,9 +5,7 @@ public class MainMenuController : MonoBehaviour
 {
     public UnityEngine.UI.Image currentSkinImage; // 인스펙터에서 연결 필요
     
-    // IP 주소 가셔오는 헬퍼 함수
-    // [CHANGE] 인스펙터가 아닌 코드로 직접 제어 (private static)
-    // 친구 컴퓨터(방장)의 IP를 여기에 직접 적으세요! 
+    // IP 주소 가셔오는 헬퍼 함수, 테스트시 localhost로 변경
     private static string serverIP = "10.249.18.68"; 
 
     // IP 주소 가져오는 헬퍼 함수

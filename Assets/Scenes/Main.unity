@@ -572,7 +572,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
   currentSkinImage: {fileID: 841406658}
-  serverIP: 10.249.18.68
   lobbyPanel: {fileID: 1704024538}
   cancelMatchButton: {fileID: 1556110677}
   loginPanel: {fileID: 730651857}

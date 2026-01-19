@@ -8,7 +8,7 @@ public class ItemManager : NetworkBehaviour
 {
     [Header("참조")]
     public CarController2D carController;
-    public CarController2D enemyCarController;
+    // public CarController2D enemyCarController; // (네트워크에서는 직접 참조보다 Connection을 찾는 방식이 안전하므로 주석 처리하거나 무시합니다)
 
     // 아이템 저장소
     public Queue<ItemType> itemQueue = new Queue<ItemType>();
@@ -17,20 +17,14 @@ public class ItemManager : NetworkBehaviour
     private Image slot1Image;
     private Image slot2Image;
     private GameObject grassEffectUI;
-    private GameObject shieldEffectObj;
-
-    // 햄찌 UI
     private GameObject qtePanel;
     private RectTransform qteCursor;
 
-    // =========================================================
-    // [수정] 여기가 중요! 빠진 변수를 다시 넣었습니다.
-    // =========================================================
     [Header("미니게임 상태")]
     public bool isQteActive = false;
     private float qteCursorPos = 0f;
     private float qteDirection = 1f;
-    private float qteTimer = 0f; // <--- 아까 이게 없어서 에러 났던 겁니다!
+    private float qteTimer = 0f;
 
     [Header("리소스")]
     public Sprite[] inputItemSprites;
@@ -63,26 +57,23 @@ public class ItemManager : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        // X키 입력 로직
+        // 아이템 사용 (Z키)
         if (Input.GetKeyDown(KeyCode.Z))
         {
-            if (isQteActive) return; // 미니게임 중엔 사용 불가
-            if (itemQueue.Count == 0) return; // 아이템 없으면 사용 불가
+            if (isQteActive) return;
+            if (itemQueue.Count == 0) return;
 
             UseItem();
         }
 
         // 미니게임 업데이트
-        if (isQteActive)
-        {
-            UpdateHamsterQTE();
-        }
+        if (isQteActive) UpdateHamsterQTE();
 
-        // [치트] 1번 키로 햄찌 획득
+        // [테스트용 치트] 1, 2, 3, 4번 키로 아이템 획득
         if (Input.GetKeyDown(KeyCode.Alpha1)) AddItem(ItemType.HamsterBomb);
-
-        // [긴급 테스트] H키로 바로 실행
-        if (Input.GetKeyDown(KeyCode.H)) StartHamsterQTE();
+        if (Input.GetKeyDown(KeyCode.Alpha2)) AddItem(ItemType.GrassField);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) AddItem(ItemType.DashBoom);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) AddItem(ItemType.Shield);
     }
 
     public void AddItem(ItemType newItem)
@@ -92,16 +83,71 @@ public class ItemManager : NetworkBehaviour
         UpdateItemUI();
     }
 
+    // ==========================================
+    // 📡 [네트워크 핵심] 아이템 사용 분기점
+    // ==========================================
     void UseItem()
     {
         if (itemQueue.Count > 0)
         {
             ItemType usedItem = itemQueue.Dequeue();
-            ExecuteItemLogic(usedItem);
-            UpdateItemUI();
+            UpdateItemUI(); // UI 즉시 갱신
+
+            // 공격 아이템인지 버프 아이템인지 판단
+            if (usedItem == ItemType.HamsterBomb || usedItem == ItemType.GrassField)
+            {
+                // [공격] 서버로 명령을 보냄 (내가 아니라 적에게 발동해야 함)
+                Debug.Log($"⚔️ 공격 아이템 사용: {usedItem} -> 적에게 전송!");
+                CmdAttackEnemy(usedItem);
+            }
+            else
+            {
+                // [버프] 나 자신에게 즉시 발동
+                Debug.Log($"🛡️ 버프 아이템 사용: {usedItem} -> 나에게 적용!");
+                ExecuteEffectLocal(usedItem);
+            }
         }
     }
 
+    // 1. [Command] 클라이언트가 서버에게 "적을 공격해줘"라고 요청
+    [Command]
+    void CmdAttackEnemy(ItemType type)
+    {
+        // 서버에 접속된 모든 플레이어를 순회
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            // "나(명령을 보낸 사람)"가 아닌 다른 사람을 찾음
+            if (conn != connectionToClient)
+            {
+                // 찾은 적에게 TargetRpc를 쏘아줌
+                TargetRpcReceiveAttack(conn, type);
+            }
+        }
+    }
+
+    // 2. [TargetRpc] 서버가 특정 클라이언트(적)에게만 실행하는 함수
+    [TargetRpc]
+    void TargetRpcReceiveAttack(NetworkConnection target, ItemType type)
+    {
+        Debug.Log($"💥 으악! 공격받았다! 아이템: {type}");
+        ExecuteEffectLocal(type);
+    }
+
+    // 실질적인 효과 실행 (나한테 쓰든, 남이 나한테 썼든 여기서 처리)
+    void ExecuteEffectLocal(ItemType type)
+    {
+        switch (type)
+        {
+            case ItemType.HamsterBomb: StartHamsterQTE(); break;       // 적에게 QTE 띄움
+            case ItemType.GrassField: StartCoroutine(ShowGrassField()); break; // 적 화면 가림
+            case ItemType.DashBoom: carController.ApplySpeedBoost(15f, 2f); break; // 내 속도 증가
+            case ItemType.Shield: carController.ActivateShield(3f); break;    // 내 쉴드 켜기
+        }
+    }
+
+    // ==========================================
+    //  UI 갱신
+    // ==========================================
     void UpdateItemUI()
     {
         if (slot1Image == null || slot2Image == null) return;
@@ -114,41 +160,20 @@ public class ItemManager : NetworkBehaviour
         if (items.Length >= 2) slot2Image.sprite = inputItemSprites[(int)items[1] - 1];
     }
 
-    void ExecuteItemLogic(ItemType type)
-    {
-        switch (type)
-        {
-            case ItemType.HamsterBomb: StartHamsterQTE(); break;
-            case ItemType.DashBoom: carController.ApplySpeedBoost(15f, 2f); break;
-            case ItemType.Shield: carController.ActivateShield(3f); break;
-            case ItemType.GrassField: StartCoroutine(ShowGrassField()); break;
-        }
-    }
-
     // ==========================================
-    //  햄찌 미니게임 (수정된 버전)
+    // 🐹 햄찌 미니게임 로직 (변경 없음)
     // ==========================================
     void StartHamsterQTE()
     {
         if (qtePanel == null) return;
-
         isQteActive = true;
-
-        // 패널과 자식들 켜기
         qtePanel.SetActive(true);
         foreach (Transform child in qtePanel.transform) child.gameObject.SetActive(true);
-
-        // 맨 앞으로 가져오고 위치 초기화
         qtePanel.transform.SetAsLastSibling();
-        RectTransform rect = qtePanel.GetComponent<RectTransform>();
-        if (rect != null) rect.anchoredPosition = Vector2.zero;
 
-        // 변수 초기화
-        qteTimer = 3.0f; // 이제 에러 안 날 겁니다!
+        qteTimer = 3.0f;
         qteCursorPos = 0f;
         qteDirection = 1f;
-
-        Debug.Log("🐹 햄찌 미니게임 시작!");
     }
 
     void UpdateHamsterQTE()
@@ -157,12 +182,8 @@ public class ItemManager : NetworkBehaviour
         if (qteCursorPos >= 1f) { qteCursorPos = 1f; qteDirection = -1f; }
         if (qteCursorPos <= 0f) { qteCursorPos = 0f; qteDirection = 1f; }
 
-        if (qteCursor != null)
-        {
-            qteCursor.anchoredPosition = new Vector2((qteCursorPos - 0.5f) * 300f, 0);
-        }
+        if (qteCursor != null) qteCursor.anchoredPosition = new Vector2((qteCursorPos - 0.5f) * 300f, 0);
 
-        // 타이머 감소
         qteTimer -= Time.deltaTime;
         if (qteTimer <= 0) EndHamsterQTE(false);
 
@@ -179,22 +200,24 @@ public class ItemManager : NetworkBehaviour
 
         if (success)
         {
-            Debug.Log("🎉 성공! 부스트 발동!");
-            // 원래 속도 + 15 (엄청 빨라짐)
+            Debug.Log("🎉 방어 성공! 부스트!");
             carController.ApplySpeedBoost(15f, 1f);
         }
         else
         {
-            Debug.Log("🐢 실패! 속도 감소!");
-
-            // [핵심 변경] 스턴 함수 삭제! -> 대신 속도를 깎아버림
-            // 기본 속도가 10이라면 -9를 해서 속도 1로 만듦 (거의 멈춤)
+            Debug.Log("🐢 방어 실패! 속도 감소!");
+            // 실패 시 속도 대폭 감소 (거의 멈춤)
             carController.ApplySpeedBoost(-9f, 2.0f);
         }
     }
 
     IEnumerator ShowGrassField()
     {
-        if (grassEffectUI) { grassEffectUI.SetActive(true); yield return new WaitForSeconds(3f); grassEffectUI.SetActive(false); }
+        if (grassEffectUI)
+        {
+            grassEffectUI.SetActive(true);
+            yield return new WaitForSeconds(3f);
+            grassEffectUI.SetActive(false);
+        }
     }
 }

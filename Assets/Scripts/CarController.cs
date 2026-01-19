@@ -138,48 +138,68 @@ public class CarController2D : NetworkBehaviour
         this.enabled = isGameScene; 
     }
 
+    [SyncVar] private float syncedRotationAngle; // [NEW] 서버에서 관리하는 회전 각도
+
     void Update()
     {
-        if (!isLocalPlayer) return;
-
-        // 1. 스턴 상태면 입력 차단
-        if (isStunned)
+        // 1. 로컬 플레이어 (내가 조종)
+        if (isLocalPlayer)
         {
-            moveDir = Vector2.zero; // 이동 방향 초기화
-            return;
+            if (isStunned)
+            {
+                moveDir = Vector2.zero;
+                return;
+            }
+
+            moveDir = Vector2.zero;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) moveDir += Vector2.left;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) moveDir += Vector2.right;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
+
+            moveDir = moveDir.normalized;
+
+            // [DEBUG] F4 누르면 속도 2배
+            if (Input.GetKeyDown(KeyCode.F4))
+            {
+                moveSpeed *= 2f;
+                Debug.Log($"[DEBUG] 속도 2배 증가! 현재 속도: {moveSpeed}");
+            }
+            // [DEBUG] F5 누르면 속도 절반
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                moveSpeed *= 0.5f;
+                Debug.Log($"[DEBUG] 속도 절반 감소! 현재 속도: {moveSpeed}");
+            }
+
+            UpdateTileSpeed();
+
+            if (moveDir != Vector2.zero)
+            {
+                HandleVisualRotation(moveDir);
+                
+                // [NEW] 내 각도를 서버로 전송 (다른 사람들도 보라고)
+                float currentAngle = Mathf.Atan2(moveDir.y, moveDir.x) * Mathf.Rad2Deg;
+                if (Mathf.Abs(currentAngle - syncedRotationAngle) > 1f) // 변경이 있을 때만 전송
+                {
+                    CmdUpdateRotation(currentAngle);
+                }
+            }
         }
-
-        // 2. 입력 받기
-        moveDir = Vector2.zero;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) moveDir += Vector2.left;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) moveDir += Vector2.right;
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
-
-        moveDir = moveDir.normalized;
-
-        // [DEBUG] F4 누르면 속도 2배 (토글 아님, 계속 빨라짐)
-        if (Input.GetKeyDown(KeyCode.F4))
+        // 2. 리모트 플레이어 (친구가 조종)
+        else
         {
-            moveSpeed *= 2f;
-            Debug.Log($"[DEBUG] 속도 2배 증가! 현재 속도: {moveSpeed}");
+            // [NEW] 서버에서 온 각도로 부드럽게 회전
+            Quaternion targetRotation = Quaternion.Euler(0, 0, syncedRotationAngle + -90f); // -90f 보정 주의
+            visualTransform.rotation = Quaternion.RotateTowards(visualTransform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
+    }
 
-        // [DEBUG] F5 누르면 속도 절반 (토글 아님, 계속 느려짐)
-        if (Input.GetKeyDown(KeyCode.F5))
-        {
-            moveSpeed *= 0.5f;
-            Debug.Log($"[DEBUG] 속도 절반 감소! 현재 속도: {moveSpeed}");
-        }
-
-        // 3. 타일 체크
-        UpdateTileSpeed();
-
-        // 4. 스프라이트 회전
-        if (moveDir != Vector2.zero)
-        {
-            HandleVisualRotation(moveDir);
-        }
+    // [NEW] 각도 동기화 명령
+    [Command]
+    void CmdUpdateRotation(float angle)
+    {
+        syncedRotationAngle = angle;
     }
 
     private void UpdateTileSpeed()
@@ -189,12 +209,6 @@ public class CarController2D : NetworkBehaviour
         Vector3Int cellPos = groundTilemap.WorldToCell(transform.position);
         TileBase tile = groundTilemap.GetTile(cellPos);
 
-        // RoadTile 클래스가 있다면 사용, 없으면 태그나 이름으로 체크 가능
-        // 여기선 예시로 유지
-        // if (tile is RoadTile roadTile) tileSpeedMultiplier = roadTile.speedMultiplier;
-        // else tileSpeedMultiplier = 0.5f;
-
-        // (임시) 타일 로직이 없다면 기본 1.0
         tileSpeedMultiplier = 1.0f;
     }
 

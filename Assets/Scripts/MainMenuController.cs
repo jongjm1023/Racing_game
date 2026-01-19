@@ -4,6 +4,7 @@ using TMPro;
 public class MainMenuController : MonoBehaviour
 {
     public UnityEngine.UI.Image currentSkinImage; // 인스펙터에서 연결 필요
+    public TMP_Text characterNameText; // [NEW] 캐릭터 이름 표시용 텍스트
     
     // IP 주소 가셔오는 헬퍼 함수, 테스트시 localhost로 변경
     private static string serverIP = "10.249.18.68"; 
@@ -310,6 +311,12 @@ public class MainMenuController : MonoBehaviour
         CharacterData equippedChar = allCharacters.Find(c => c.character_id == userData.current_character_id);
         if (equippedChar != null && !string.IsNullOrEmpty(equippedChar.image_url))
         {
+            // [NEW] 캐릭터 이름 업데이트
+            if (characterNameText != null)
+            {
+                characterNameText.text = equippedChar.name;
+            }
+
             string baseName = equippedChar.image_url.Replace(".png", "");
             
             // [NEW] 게임 씬에서 사용할 수 있게 저장 (차량 스킨 동기화용)

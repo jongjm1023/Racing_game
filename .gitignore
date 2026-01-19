@@ -90,4 +90,17 @@ Thumbs.db
 node_modules/
 .env
 
+# Security Configuration
+Assets/google-services.json
+Assets/google-services.json.meta
+Assets/Scripts/GoogleClientSecret.cs
+
+# Heavy SDKs (Team members should install these manually)
+Assets/Firebase/
+Assets/Firebase.meta
+Assets/ExternalDependencyManager/
+Assets/ExternalDependencyManager.meta
+Assets/Plugins/Android/
+Assets/Plugins/iOS/
+
 

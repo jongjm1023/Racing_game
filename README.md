@@ -1,7 +1,7 @@
 # 달려달려 햄찌런
 
 
-
+<img width="1186" height="820" alt="Image" src="https://github.com/user-attachments/assets/b10e34fc-9f62-4092-acae-23a4cb5a346a" />
 ```
 더 간편히, 더 자세히 카이스트 지도
 ```
@@ -65,8 +65,8 @@ src="https://github.com/user-attachments/assets/a792a2c0-0970-4753-a3af-6b385c6a
 
 ### ✅ 개발 스택
 
-- 개발 언어: Kotlin
-- SDK : Android SDK
+- 개발 언어: C#
+- 게임 엔진: Unity
 - 지도 API : Googlemap API
 - UI : Jetpack Compose, Figma
 

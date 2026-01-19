@@ -3,13 +3,14 @@ using Mirror;
 
 public class PlayerLapController : NetworkBehaviour
 {
-    [SyncVar] public int currentLap = 1;
+    [SyncVar(hook = nameof(OnCurrentLapChanged))] public int currentLap = 1;
     [SyncVar] public bool hasFinished = false;
 
     // --- 시간 측정용 변수 추가 ---
-    [SyncVar] private float startTime;
+    // --- 시간 측정용 변수 추가 ---
+    [SyncVar] private double startTime; // NetworkTime은 double을 반환함
+    [SyncVar] private bool isRacing = false;
     private float raceTime;
-    private bool isRacing = false;
     // ---------------------------
 
     private bool passedHalfWay = false;
@@ -18,23 +19,48 @@ public class PlayerLapController : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        currentLap=1;
+        // currentLap = 1; // [FIX] SyncVar는 클라이언트에서 건드리면 안 됨! 서버가 주는 대로 받아야 함.
         CmdRequestStartTime(); // 서버에 시작 시간 요청
+    }
+
+    void OnCurrentLapChanged(int oldLap, int newLap)
+    {
+        Debug.Log($"[Client] 바퀴 수 변경: {oldLap} -> {newLap}");
     }
 
     [Command]
     void CmdRequestStartTime()
     {
-        startTime = (float)NetworkTime.time;
+        startTime = NetworkTime.time;
         isRacing = true;
+    }
+
+    // [DEBUG] 강제 완주 (F3)
+    [Command]
+    void CmdDebugForceFinish()
+    {
+        if (LapManager.instance != null)
+        {
+            currentLap = LapManager.instance.totalLaps;
+            ProcessLap(); // 막바퀴 상태에서 호출하면 즉시 완주 처리됨
+        }
     }
 
     void Update()
     {
-        // 로컬 플레이어이고, 달리는 중이고, 아직 안 끝났을 때만 시간 계산
-        if (!isLocalPlayer || !isRacing || hasFinished) return;
+        if (!isLocalPlayer) return;
 
-        raceTime = (float)NetworkTime.time - startTime;
+        // [DEBUG] F3 누르면 즉시 완주
+        if (Input.GetKeyDown(KeyCode.F3))
+        {
+            CmdDebugForceFinish();
+        }
+
+        // 달리는 중이고, 아직 안 끝났을 때만 시간 계산
+        if (!isRacing || hasFinished) return;
+        
+        // [FIX] NetworkTime을 사용하여 서버 시간 기준으로 경과 시간 계산
+        raceTime = (float)(NetworkTime.time - startTime);
     }
 
     // UI에서 이 함수를 불러서 시간을 가져감

@@ -158,6 +158,20 @@ public class CarController2D : NetworkBehaviour
 
         moveDir = moveDir.normalized;
 
+        // [DEBUG] F4 누르면 속도 2배 (토글 아님, 계속 빨라짐)
+        if (Input.GetKeyDown(KeyCode.F4))
+        {
+            moveSpeed *= 2f;
+            Debug.Log($"[DEBUG] 속도 2배 증가! 현재 속도: {moveSpeed}");
+        }
+
+        // [DEBUG] F5 누르면 속도 절반 (토글 아님, 계속 느려짐)
+        if (Input.GetKeyDown(KeyCode.F5))
+        {
+            moveSpeed *= 0.5f;
+            Debug.Log($"[DEBUG] 속도 절반 감소! 현재 속도: {moveSpeed}");
+        }
+
         // 3. 타일 체크
         UpdateTileSpeed();
 

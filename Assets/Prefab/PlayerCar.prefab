@@ -195,7 +195,6 @@ MonoBehaviour:
   skinName: 
   isStunned: 0
   isShieldActive: 0
-  visualRotationOffset: -90
 --- !u!50 &2494246049973333918
 Rigidbody2D:
   serializedVersion: 5
@@ -332,7 +331,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  currentLap: 0
+  currentLap: 1
   hasFinished: 0
 --- !u!114 &6522779740199261730
 MonoBehaviour:
@@ -350,7 +349,6 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   carController: {fileID: 0}
-  enemyCarController: {fileID: 0}
   isQteActive: 0
   inputItemSprites:
   - {fileID: -5636343253877202797, guid: b74c2f83e9c722e44b705ddd92715dc5, type: 3}

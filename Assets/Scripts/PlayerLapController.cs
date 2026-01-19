@@ -19,8 +19,12 @@ public class PlayerLapController : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        // currentLap = 1; // [FIX] SyncVar는 클라이언트에서 건드리면 안 됨! 서버가 주는 대로 받아야 함.
-        CmdRequestStartTime(); // 서버에 시작 시간 요청
+    }
+
+    // [NEW] RaceManager에서 호출: 카운트다운 끝나면 타이머 시작
+    public void StartRacing()
+    {
+        CmdRequestStartTime();
     }
 
     void OnCurrentLapChanged(int oldLap, int newLap)

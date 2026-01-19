@@ -76,7 +76,17 @@ public class RaceManager : MonoBehaviour
         PlaySound(goSound);
 
         // --- 조작 풀기 ---
-        if (myCarController != null) myCarController.enabled = true;
+        if (myCarController != null) 
+        {
+            myCarController.enabled = true;
+
+            // [NEW] 타이머 시작 (카운트다운 동안 멈춰있었음)
+            var lapController = myCarController.GetComponent<PlayerLapController>();
+            if (lapController != null) 
+            {
+                lapController.StartRacing();
+            }
+        }
 
         // 텍스트 끄기
         yield return new WaitForSeconds(1.0f);

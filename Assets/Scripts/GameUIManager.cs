@@ -40,7 +40,7 @@ public class GameUIManager : MonoBehaviour
 
                 // 1. currentLap이 1부터 시작하는지 확인
                 // 2. \n을 써서 바퀴 수 아래에 시간 표시
-                lapText.text = string.Format("LAPS: {0} / {1}\n{2:00}:{3:00}.{4:02}",
+                lapText.text = string.Format("LAPS: {0} / {1}\n{2:00}:{3:00}.{4:00}",
                     lp.currentLap,
                     LapManager.instance != null ? LapManager.instance.totalLaps : 3,
                     min, sec, msec);

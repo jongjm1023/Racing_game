@@ -25,7 +25,7 @@ public class ShopItemUI : MonoBehaviour
         {
             if (isEquipped) 
             {
-                priceText.text = "<color=green>장착중</color>"; // 강조
+                priceText.text = "<color=blue>장착중</color>"; // 강조
             }
             else if (isOwned) 
             {

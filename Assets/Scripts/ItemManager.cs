@@ -109,27 +109,45 @@ public class ItemManager : NetworkBehaviour
         }
     }
 
-    // 1. [Command] 클라이언트가 서버에게 "적을 공격해줘"라고 요청
+
+    // 1. [Command] 서버야, 나(보낸 사람) 말고 다른 애들한테 공격 날려줘!
     [Command]
     void CmdAttackEnemy(ItemType type)
     {
-        // 서버에 접속된 모든 플레이어를 순회
+        // 내 고유 번호 (Network ID)
+        uint myNetId = this.netId;
+
+        Debug.Log($"[Server] 📡 공격 요청 수신! (공격자 ID: {myNetId})");
+
+        int attackCount = 0;
+
+        // 서버에 접속한 모든 '연결(사람)'을 뒤짐
         foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
         {
-            // "나(명령을 보낸 사람)"가 아닌 다른 사람을 찾음
-            if (conn != connectionToClient)
+            // 접속자의 플레이어 캐릭터가 존재하는지 확인
+            if (conn.identity != null)
             {
-                // 찾은 적에게 TargetRpc를 쏘아줌
-                TargetRpcReceiveAttack(conn, type);
+                // 그 사람의 ID가 내 ID와 다르다면? => 적이다!
+                if (conn.identity.netId != myNetId)
+                {
+                    Debug.Log($"[Server] 🎯 타겟 발견! (타겟 ID: {conn.identity.netId}) -> 공격 발사!");
+                    TargetRpcReceiveAttack(conn, type);
+                    attackCount++;
+                }
             }
+        }
+
+        if (attackCount == 0)
+        {
+            Debug.Log("[Server] ❌ 공격할 상대를 찾지 못했습니다. (혼자 있거나 상대방 로딩 덜 됨)");
         }
     }
 
-    // 2. [TargetRpc] 서버가 특정 클라이언트(적)에게만 실행하는 함수
+    // 2. [TargetRpc] 타겟이 된 클라이언트에서 실행
     [TargetRpc]
     void TargetRpcReceiveAttack(NetworkConnection target, ItemType type)
     {
-        Debug.Log($"💥 으악! 공격받았다! 아이템: {type}");
+        Debug.Log($"💥 [Client] 공격 아이템 피격! ({type})");
         ExecuteEffectLocal(type);
     }
 

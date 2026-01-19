@@ -124,7 +124,7 @@ Transform:
   m_GameObject: {fileID: 4108600045980324644}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 96, y: 28, z: 0}
+  m_LocalPosition: {x: 98, y: 27, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -195,7 +195,6 @@ MonoBehaviour:
   skinName: 
   isStunned: 0
   isShieldActive: 0
-  visualRotationOffset: -90
 --- !u!50 &2494246049973333918
 Rigidbody2D:
   serializedVersion: 5
@@ -350,7 +349,6 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   carController: {fileID: 0}
-  enemyCarController: {fileID: 0}
   isQteActive: 0
   inputItemSprites:
   - {fileID: -5636343253877202797, guid: b74c2f83e9c722e44b705ddd92715dc5, type: 3}

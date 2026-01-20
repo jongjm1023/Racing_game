@@ -175,7 +175,6 @@ public class CarController2D : NetworkBehaviour
             if (isRaceFinished || isStunned)
             {
                 moveDir = Vector2.zero;
-                ResetBounce();
                 return;
             }
 
@@ -185,9 +184,7 @@ public class CarController2D : NetworkBehaviour
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
             if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
             
-            // 움직임 여부에 따른 애니메이션
-            if (moveDir != Vector2.zero) HandleBounce();
-            else ResetBounce();
+            // 움직임 여부에 따른 애니메이션 처리는 UpdateMovementEffect()에서 공통 수행됨
 
             moveDir = moveDir.normalized;
 
@@ -227,27 +224,40 @@ public class CarController2D : NetworkBehaviour
         }
     }
 
-    // [NEW] 이펙트 처리 함수
+    // [NEW] 이펙트 처리 함수 (파티클 + 애니메이션)
     void UpdateMovementEffect()
     {
-        if (movementParticle == null) return;
+        bool isMoving = false;
 
-        // 현재 프레임의 이동 거리 계산
-        float distanceMoved = Vector3.Distance(transform.position, lastPosition);
-
-        // 속도 계산 (거리 / 시간)
-        float currentSpeed = distanceMoved / Time.deltaTime;
-
-        var emission = movementParticle.emission;
-
-        // 움직임이 감지되면 (속도가 0.1보다 크면) 파티클 켜기
-        if (currentSpeed > 0.1f)
+        if (isLocalPlayer)
         {
-            emission.enabled = true;
+            // 로컬 플레이어는 입력값(moveDir)이 가장 정확함 (즉시 반응)
+            isMoving = moveDir.sqrMagnitude > 0.01f;
         }
         else
         {
-            emission.enabled = false;
+            // 리모트 플레이어는 위치 변화량으로 추측
+            // 네트워크 떨림(Jitter)을 무시하기 위해 임계값을 0.5f로 상향 조정
+            float distanceMoved = Vector3.Distance(transform.position, lastPosition);
+            float currentSpeed = distanceMoved / Time.deltaTime;
+            isMoving = currentSpeed > 0.5f;
+        }
+
+        // 1. 파티클 처리
+        if (movementParticle != null)
+        {
+            var emission = movementParticle.emission;
+            emission.enabled = isMoving;
+        }
+
+        // 2. 바운스 애니메이션 처리 (로컬/리모트 모두 적용)
+        if (!isRaceFinished && !isStunned && isMoving)
+        {
+            HandleBounce();
+        }
+        else
+        {
+            ResetBounce();
         }
 
         // 현재 위치를 저장 (다음 프레임 비교용)

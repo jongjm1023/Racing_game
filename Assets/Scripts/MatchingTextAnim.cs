@@ -10,11 +10,18 @@ public class MatchingTextAnim : MonoBehaviour
 
     private string originalText; // "매칭중" 원본 텍스트 저장용
 
-    void Start()
+    void Awake()
     {
-        // 스크립트가 시작될 때 현재 텍스트("매칭중")를 저장해둠
         if (targetText == null) targetText = GetComponent<TextMeshProUGUI>();
-        originalText = targetText.text;
+    }
+
+    void OnEnable()
+    {
+        // 텍스트가 아직 저장 안 됐다면 저장
+        if (string.IsNullOrEmpty(originalText) && targetText != null)
+        {
+            originalText = targetText.text;
+        }
 
         // 애니메이션 시작
         StartCoroutine(AnimateDots());
@@ -26,6 +33,13 @@ public class MatchingTextAnim : MonoBehaviour
 
         while (true)
         {
+            // 아직 originalText가 없을 수도 있음 (방어 코드)
+            if (string.IsNullOrEmpty(originalText)) 
+            {
+                 yield return null; 
+                 continue;
+            }
+
             targetText.text = originalText + ".";
             yield return wait;
 
@@ -34,14 +48,16 @@ public class MatchingTextAnim : MonoBehaviour
 
             targetText.text = originalText + "...";
             yield return wait;
-
-            // 다시 . 으로 돌아감 (원한다면 빈 텍스트 단계를 추가해도 됨)
         }
     }
 
-    // 오브젝트가 꺼지면 코루틴도 멈추도록 설정 (안전장치)
+    // 오브젝트가 꺼지면 코루틴도 멈추고 텍스트 원상복구
     void OnDisable()
     {
         StopAllCoroutines();
+        if (targetText != null && !string.IsNullOrEmpty(originalText))
+        {
+            targetText.text = originalText;
+        }
     }
 }

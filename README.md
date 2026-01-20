@@ -27,29 +27,29 @@
 
 <img width="2719" height="1510" alt="Image" src="https://github.com/user-attachments/assets/7bfd3e13-99f8-414f-b37c-79d97e1d4e01" />
 
+### DB 구조(MYSQL)
+<img width="834" height="585" alt="스크린샷 2026-01-20 155751" src="https://github.com/user-attachments/assets/b8bbbd41-f956-4997-a5e2-ae71470931a2" />
+
 ### Scene. 메인
 
 - 구글 연동 로그인 가능, 로그인 이력 저장
-- 
+- 현재 스킨 표시
+- 상점 씬 연결
+- 설정: 효과음, 배경음 조절/ 로그아웃
+- 온라인 매칭 -> 매칭 성공 시 게임 씬 연결
 <br>
 
 ### Scene. 상점
-
-
-- 학교에 존재하는 시설들의 세부정보 확인가능
-- 영업 시간, 메뉴, 연락처 등 필수 정보 제공
-- 연락처 복사, 전화 기능
-- 건물 내부의 층별 안내도 확인 가능 (일부 건물만 지원)
+- 현재 재화량, 스킨 표시
+- 스킨 목록(이름, 외형, 가격) 표시 (DB에서 관리)
+- 구매 시 DB의 유저 인벤토리,재화량 업데이트 & 자동 장착
 <br>
 
 <img width="1354" height="758" alt="Image" src="https://github.com/user-attachments/assets/461dcc60-dfc0-4056-b732-11d3e9e3ca07" />
 <img width="1003" height="694" alt="Image" src="https://github.com/user-attachments/assets/38be805c-1357-4bd9-af17-7be21a478eb9" />
 
 ### Scene. 게임
-
-
-- 시간표에 따른 교내/통근 버스 현위치 확인
-- 교내 버스 시간표 확인가능
+- 
 <br>
 
 

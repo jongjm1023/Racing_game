@@ -7,7 +7,7 @@ public class MainMenuController : MonoBehaviour
     public TMP_Text characterNameText; // [NEW] 캐릭터 이름 표시용 텍스트
     
     // IP 주소 가셔오는 헬퍼 함수, 테스트시 localhost로 변경
-    private static string serverIP = "10.249.18.68"; 
+    private static string serverIP = "10.249.18.54"; 
 
     // IP 주소 가져오는 헬퍼 함수
     public static string GetServerIP()
@@ -30,8 +30,6 @@ public class MainMenuController : MonoBehaviour
             
             // 이미 로그인된 상태라면 패널 숨김, 로그아웃 버튼 보임
             if (loginPanel != null) loginPanel.SetActive(false);
-            if (logoutButton != null) logoutButton.SetActive(true);
-
             if (currentSkinImage != null)
             {
                 StartCoroutine(LoadData());
@@ -42,7 +40,6 @@ public class MainMenuController : MonoBehaviour
             // 정보가 없으면 로드하지 않고 로그인 대기
             Debug.Log("[MainMenu] 저장된 닉네임이 없습니다. 로그인이 필요합니다.");
             if (loginPanel != null) loginPanel.SetActive(true);
-            if (logoutButton != null) logoutButton.SetActive(false);
         }
     }
 
@@ -96,8 +93,6 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Login UI")]
     public GameObject loginPanel; // [NEW] 로그인 화면
-    public GameObject logoutButton; // [NEW] 로그아웃 버튼 (로그인 전에는 숨김)
-
     private bool isGameStarting = false;
 
     // Update is called once per frame

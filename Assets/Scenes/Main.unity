@@ -3225,8 +3225,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 534113551}
-  - component: {fileID: 534113553}
   - component: {fileID: 534113552}
+  - component: {fileID: 534113554}
+  - component: {fileID: 534113553}
   m_Layer: 5
   m_Name: LogoutButton
   m_TagString: Untagged
@@ -3251,7 +3252,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -300}
   m_SizeDelta: {x: 300, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &534113552
@@ -3294,7 +3295,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 534113553}
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
@@ -3310,6 +3311,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 892355035}
+        m_TargetAssemblyTypeName: MainMenuController, Assembly-CSharp
+        m_MethodName: OnClickLogout
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &534113553
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3319,9 +3332,35 @@ MonoBehaviour:
   m_GameObject: {fileID: 534113550}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: effectsound
-  m_EditorClassIdentifier: 
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: -4171949278277939191, guid: 36a94ffe6a2424343ae45111e3ed2f2d, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &534113554
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534113550}
+  m_CullTransparentMesh: 1
 --- !u!1 &555756932
 GameObject:
   m_ObjectHideFlags: 0
@@ -4147,7 +4186,6 @@ MonoBehaviour:
   lobbyPanel: {fileID: 1704024538}
   cancelMatchButton: {fileID: 1556110677}
   loginPanel: {fileID: 730651857}
-  logoutButton: {fileID: 1461502181}
   settingsPanel: {fileID: 331754713}
   settingsIdText: {fileID: 1296841039}
   bgmSlider: {fileID: 1017505124}

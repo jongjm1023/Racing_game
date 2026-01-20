@@ -265,8 +265,8 @@ public class CarController2D : NetworkBehaviour
             return;
         }
 
-        // [수정된 공식] (기본속도 * 타일배율) + 아이템추가속도
-        float finalSpeed = (moveSpeed+ addedSpeed) * tileSpeedMultiplier ;
+        // [수정된 공식] (기본속도 + 아이템추가속도) * 타일배율
+        float finalSpeed = (moveSpeed + addedSpeed) * tileSpeedMultiplier;
 
         rb.linearVelocity = moveDir * finalSpeed;
     }

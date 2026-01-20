@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI; // Legacy Text용
 using Mirror; // Mirror 기능 사용
 
-public class RaceManager : MonoBehaviour
+public class RaceManager : NetworkBehaviour
 {
     [Header("UI 연결")]
     public Text countdownText; // 꼭 Legacy Text를 연결하세요
@@ -16,35 +16,63 @@ public class RaceManager : MonoBehaviour
     // 인스펙터에 넣을 필요 없음 (코드로 찾음)
     private CarController2D myCarController;
 
-    IEnumerator Start()
+    // [NEW] 서버가 시작되면 실행 (호스트 기준)
+    public override void OnStartServer()
     {
-        // 1. 내 차(Local Player)가 생성될 때까지 기다림
+        base.OnStartServer();
+        // 씬 로딩 등을 고려해 2초 정도 대기 후 시작 신호 보냄
+        StartCoroutine(ServerWaitAndStart());
+    }
+
+    IEnumerator ServerWaitAndStart()
+    {
+        Debug.Log("[Server] 플레이어 생성 대기 중...");
+
+        float timeout = 15f; // 최대 15초까지만 기다림 (무한 대기 방지)
+        float elapsed = 0f;
+
+        while (elapsed < timeout)
+        {
+            int playerCount = NetworkManager.singleton.numPlayers;
+            int carCount = FindObjectsByType<CarController2D>(FindObjectsSortMode.None).Length;
+
+            // 접속한 인원수만큼 차가 생성되었는지 확인
+            // (최소 1명 이상이어야 함)
+            if (playerCount > 0 && carCount >= playerCount)
+            {
+                Debug.Log($"[Server] 모든 플레이어({playerCount}명) 준비 완료!");
+                break; 
+            }
+
+            // 아직 덜 왔으면 대기
+            elapsed += 0.5f;
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // 안정성을 위해 아주 잠깐 더 대기
+        yield return new WaitForSeconds(0.5f);
+        
+        Debug.Log("[Server] 카운트다운 신호 전송!");
+        RpcStartCountdown();
+    }
+
+    // [NEW] 서버 -> 모든 클라이언트에게 "카운트다운 시작해!" 명령
+    [ClientRpc]
+    void RpcStartCountdown()
+    {
+        StartCoroutine(RoutineCountdown());
+    }
+
+    // 기존 로직을 Rpc에서 호출
+    IEnumerator RoutineCountdown()
+    {
+        // 1. 내 차(Local Player)가 생성될 때까지 기다림 (안전을 위해 여기서도 체크)
         while (myCarController == null)
         {
             FindMyCar();
             yield return null;
         }
 
-        // 2. 카운트다운 시작
-        yield return StartCoroutine(RoutineCountdown());
-    }
-
-    void FindMyCar()
-    {
-        CarController2D[] cars = FindObjectsByType<CarController2D>(FindObjectsSortMode.None);
-
-        foreach (var car in cars)
-        {
-            if (car.isLocalPlayer)
-            {
-                myCarController = car;
-                break;
-            }
-        }
-    }
-
-    IEnumerator RoutineCountdown()
-    {
         // --- 조작 얼리기 ---
         if (myCarController != null) myCarController.enabled = false;
 
@@ -57,6 +85,8 @@ public class RaceManager : MonoBehaviour
         if (audioSource != null && fullCountdownClip != null)
         {
             audioSource.PlayOneShot(fullCountdownClip);
+            // [Fix] 사운드 출력구 연결 (혹시 안되어있을 경우 대비)
+            // if (AudioManager.instance != null) audioSource.outputAudioMixerGroup = ... 
         }
 
         // --- 3 (소리는 이미 시작됨) ---
@@ -91,5 +121,18 @@ public class RaceManager : MonoBehaviour
         // 텍스트 끄기
         yield return new WaitForSeconds(1.0f);
         countdownText.gameObject.SetActive(false);
+    }
+    void FindMyCar()
+    {
+        CarController2D[] cars = FindObjectsByType<CarController2D>(FindObjectsSortMode.None);
+
+        foreach (var car in cars)
+        {
+            if (car.isLocalPlayer)
+            {
+                myCarController = car;
+                break;
+            }
+        }
     }
 }

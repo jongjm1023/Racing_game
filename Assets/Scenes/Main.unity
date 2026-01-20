@@ -5474,6 +5474,14 @@ PrefabInstance:
       propertyPath: autoCreatePlayer
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 403337736873330250, guid: 46b0751fd20f06b49996e23c425bbc2e, type: 3}
+      propertyPath: spawnPrefabs.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 403337736873330250, guid: 46b0751fd20f06b49996e23c425bbc2e, type: 3}
+      propertyPath: 'spawnPrefabs.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8406065007470173511, guid: 00b469eb5a4b6fd48a09be9d32dc11c6, type: 3}
     - target: {fileID: 2005851111669369073, guid: 46b0751fd20f06b49996e23c425bbc2e, type: 3}
       propertyPath: m_Name
       value: NetworkManager

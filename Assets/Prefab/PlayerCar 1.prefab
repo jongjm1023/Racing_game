@@ -196,6 +196,8 @@ MonoBehaviour:
   isStunned: 0
   isShieldActive: 0
   isRaceFinished: 0
+  bounceSpeed: 10
+  bounceAmount: 0.3
   shieldObject: {fileID: 6195946881754589698}
 --- !u!50 &7529045927408358370
 Rigidbody2D:

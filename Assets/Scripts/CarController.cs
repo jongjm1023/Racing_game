@@ -139,6 +139,10 @@ public class CarController2D : NetworkBehaviour
         this.enabled = isGameScene; 
     }
 
+    [Header("애니메이션")]
+    public float bounceSpeed = 20f; // 통통 튀는 속도
+    public float bounceAmount = 0.1f; // 늘어나는 정도
+
     [SyncVar] private float syncedRotationAngle; // [NEW] 서버에서 관리하는 회전 각도
 
     void Update()
@@ -150,6 +154,7 @@ public class CarController2D : NetworkBehaviour
             if (isRaceFinished || isStunned)
             {
                 moveDir = Vector2.zero;
+                ResetBounce();
                 return;
             }
 
@@ -158,6 +163,10 @@ public class CarController2D : NetworkBehaviour
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) moveDir += Vector2.right;
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
             if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
+            
+            // 움직임 여부에 따른 애니메이션
+            if (moveDir != Vector2.zero) HandleBounce();
+            else ResetBounce();
 
             moveDir = moveDir.normalized;
 
@@ -257,7 +266,7 @@ public class CarController2D : NetworkBehaviour
         }
 
         // [수정된 공식] (기본속도 * 타일배율) + 아이템추가속도
-        float finalSpeed = (moveSpeed * tileSpeedMultiplier) + addedSpeed;
+        float finalSpeed = (moveSpeed+ addedSpeed) * tileSpeedMultiplier ;
 
         rb.linearVelocity = moveDir * finalSpeed;
     }
@@ -366,5 +375,25 @@ public class CarController2D : NetworkBehaviour
     {
         yield return new WaitForSeconds(0.5f);
         isRaceFinished = true;
+    }
+
+    // 통통 튀는 애니메이션
+    void HandleBounce()
+    {
+        if (visualTransform == null) return;
+
+        // 시간(Time.time)에 따라 사인파로 크기 조절 (1.0 ~ 1.0 + bounceAmount)
+        float scaleY = 1.0f + Mathf.Abs(Mathf.Sin(Time.time * bounceSpeed)) * bounceAmount;
+        
+        // X 스케일은 유지하고 Y만 늘림 (차의 진행방향이나 수직방향)
+        visualTransform.localScale = new Vector3(1f, scaleY, 1f);
+    }
+
+    void ResetBounce()
+    {
+        if (visualTransform == null) return;
+        
+        // 원래 크기(1,1,1)로 부드럽게 복귀
+        visualTransform.localScale = Vector3.Lerp(visualTransform.localScale, Vector3.one, Time.deltaTime * 10f);
     }
 }

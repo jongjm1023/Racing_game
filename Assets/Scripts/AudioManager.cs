@@ -1,25 +1,29 @@
 using UnityEngine;
+using UnityEngine.Audio; // [NEW] 오디오 믹서 사용
 
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager instance; // 어디서든 접근 가능하게 만듦
+    public static AudioManager instance;
+    
+    [Header("오디오 믹서 연결")]
+    public AudioMixer audioMixer; // [NEW] 유니티 오디오 믹서 연결
+
     public AudioSource bgmSource;
-    public AudioSource sfxSource; // 효과음용 소스
+    public AudioSource sfxSource;
 
     private float bgmVolume = 1f;
     private float sfxVolume = 1f;
 
     private void Awake()
     {
-        // 1. 싱글톤 패턴: 게임 내에 AudioManager가 하나만 있게 유지
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject); // 씬이 바뀔 때 파괴되지 않음!
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Destroy(gameObject); // 이미 있으면 새로 생긴 건 삭제
+            Destroy(gameObject);
         }
     }
 
@@ -28,25 +32,23 @@ public class AudioManager : MonoBehaviour
         // 저장된 볼륨 불러오기 (없으면 1.0)
         bgmVolume = PlayerPrefs.GetFloat("BGMVolume", 1f);
         sfxVolume = PlayerPrefs.GetFloat("SFXVolume", 1f);
+        
+        // 믹서에 적용 (약간의 딜레이가 필요할 수 있어 Start에서 호출)
         ApplyVolume();
     }
 
     void ApplyVolume()
     {
-        if (bgmSource != null) bgmSource.volume = bgmVolume;
-        if (sfxSource != null) sfxSource.volume = sfxVolume;
+        SetBGMVolume(bgmVolume);
+        SetSFXVolume(sfxVolume);
     }
 
     // 씬에서 음악을 요청할 때 사용하는 함수
     public void PlayBGM(AudioClip newClip)
     {
         if (bgmSource == null) return;
+        if (bgmSource.clip == newClip) return;
 
-        // 2. 지금 재생 중인 노래랑 똑같은 노래면 굳이 다시 틀지 않음 (이어지게)
-        if (bgmSource.clip == newClip)
-            return;
-
-        // 다른 노래라면 교체하고 재생
         bgmSource.clip = newClip;
         bgmSource.Play();
     }
@@ -60,22 +62,29 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // 볼륨 조절 함수 (슬라이더에서 호출)
+    // 볼륨 조절 함수 (슬라이더 0 ~ 1 값)
     public void SetBGMVolume(float volume)
     {
         bgmVolume = volume;
-        if (bgmSource != null) bgmSource.volume = bgmVolume;
+        
+        // 믹서 볼륨은 데시벨(dB) 단위이므로 로그 변환 필요 (-80 ~ 0)
+        // volume이 0이면 -80dB로 설정
+        float db = (volume <= 0.001f) ? -80f : Mathf.Log10(volume) * 20;
+
+        if (audioMixer != null) audioMixer.SetFloat("BGM", db);
         PlayerPrefs.SetFloat("BGMVolume", bgmVolume);
     }
 
     public void SetSFXVolume(float volume)
     {
         sfxVolume = volume;
-        if (sfxSource != null) sfxSource.volume = sfxVolume;
+
+        float db = (volume <= 0.001f) ? -80f : Mathf.Log10(volume) * 20;
+        
+        if (audioMixer != null) audioMixer.SetFloat("SFX", db);
         PlayerPrefs.SetFloat("SFXVolume", sfxVolume);
     }
 
-    // 현재 볼륨 가져오기 (UI 초기화용)
     public float GetBGMVolume() => bgmVolume;
     public float GetSFXVolume() => sfxVolume;
 }

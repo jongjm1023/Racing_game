@@ -15,7 +15,7 @@ public class PlayerLapController : NetworkBehaviour
     // [NEW] 오디오 설정 변수 추가
     [Header("Audio Settings")]
     public AudioClip lapSoundClip; // 인스펙터에서 오디오 클립 연결
-    private AudioSource audioSource;
+    public AudioSource audioSource;
 
     private bool passedHalfWay = false;
 

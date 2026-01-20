@@ -111,43 +111,51 @@ public class ItemManager : NetworkBehaviour
 
 
     // 1. [Command] 서버야, 나(보낸 사람) 말고 다른 애들한테 공격 날려줘!
+    [Header("추가 설정")]
+    public GameObject projectilePrefab; // 투사체 프리팹
+
+    // 1. [Command] 서버야, 투사체를 날려줘!
     [Command]
     void CmdAttackEnemy(ItemType type)
     {
-        // 내 고유 번호 (Network ID)
         uint myNetId = this.netId;
         int attackCount = 0;
 
-        Debug.Log($"[Server] 📡 공격 요청 수신! (공격자 ID: {myNetId})");
+        Debug.Log($"[Server] 📡 공격(투사체) 요청 수신! (공격자 ID: {myNetId})");
 
-        // 서버에 접속한 모든 '연결(사람)'을 뒤짐
+        // 적 찾기
         foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
         {
-            // 접속자의 플레이어 캐릭터가 존재하는지 확인
-            if (conn.identity != null)
+            if (conn.identity != null && conn.identity.netId != myNetId)
             {
-                // 그 사람의 ID가 내 ID와 다르다면? => 적이다!
-                if (conn.identity.netId != myNetId)
+                // [NEW] 바로 효과를 주는게 아니라 투사체를 생성해서 날림
+                if (projectilePrefab != null)
                 {
-                    // [FIX] 상대방의 ItemManager 컴포넌트를 찾아서, '그 객체'에게 RPC를 보내야 함
-                    var targetItemManager = conn.identity.GetComponent<ItemManager>();
-                    if (targetItemManager != null)
+                    GameObject proj = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+                    
+                    ItemProjectile script = proj.GetComponent<ItemProjectile>();
+                    if (script != null)
                     {
-                        Debug.Log($"[Server] 🎯 타겟 발견! (타겟 ID: {conn.identity.netId}) -> 공격 발사!");
-                        
-                        // [TargetRpc]는 호출된 인스턴스의 소유자(Client)에게 전송됩니다.
-                        // targetItemManager는 상대방 플레이어의 오브젝트이므로, 
-                        // 여기서 함수를 부르면 상대방 컴퓨터에서 실행됩니다.
-                        targetItemManager.TargetRpcReceiveAttack(type);
-                        attackCount++;
+                        script.targetNetId = conn.identity.netId;
+                        script.itemType = type;
                     }
+
+                    // 서버에서 생성 후 모든 클라이언트에 소환
+                    NetworkServer.Spawn(proj);
+                    
+                    Debug.Log($"[Server] 🚀 투사체 발사! (타겟: {conn.identity.netId})");
+                    attackCount++;
+                }
+                else
+                {
+                    Debug.LogError("[Server] ProjectilePrefab이 연결되지 않았습니다! 기존 방식(즉시 피격)으로 실행합니다.");
                 }
             }
         }
 
         if (attackCount == 0)
         {
-            Debug.Log("[Server] ❌ 공격할 상대를 찾지 못했습니다. (혼자 있거나 상대방 로딩 덜 됨)");
+            Debug.Log("[Server] ❌ 공격할 상대를 찾지 못했습니다.");
         }
     }
 
@@ -156,10 +164,10 @@ public class ItemManager : NetworkBehaviour
     [TargetRpc]
     public void TargetRpcReceiveAttack(ItemType type)
     {
-        Debug.Log($"💥 [Client] 공격 아이템 피격! ({type}) -> 효과 발동!");
-        // 이제 이 함수는 '피해자'의 컴퓨터에서, '피해자'의 로컬 오브젝트 위에서 돌아갑니다.
-        // 따라서 UI나 carController 참조가 올바르게 살아있습니다.
-        ExecuteEffectLocal(type);
+        if(carController.OnHit()){
+            ExecuteEffectLocal(type);
+            Debug.Log($"💥 [Client] 공격 아이템 피격! ({type}) -> 효과 발동!");
+        }
     }
 
     // 실질적인 효과 실행 (나한테 쓰든, 남이 나한테 썼든 여기서 처리)

@@ -159,6 +159,10 @@ public class CarController2D : NetworkBehaviour
         this.enabled = isGameScene; 
     }
 
+    [Header("애니메이션")]
+    public float bounceSpeed = 20f; // 통통 튀는 속도
+    public float bounceAmount = 0.1f; // 늘어나는 정도
+
     [SyncVar] private float syncedRotationAngle; // [NEW] 서버에서 관리하는 회전 각도
 
     void Update()
@@ -171,6 +175,7 @@ public class CarController2D : NetworkBehaviour
             if (isRaceFinished || isStunned)
             {
                 moveDir = Vector2.zero;
+                ResetBounce();
                 return;
             }
 
@@ -179,6 +184,10 @@ public class CarController2D : NetworkBehaviour
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) moveDir += Vector2.right;
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) moveDir += Vector2.up;
             if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) moveDir += Vector2.down;
+            
+            // 움직임 여부에 따른 애니메이션
+            if (moveDir != Vector2.zero) HandleBounce();
+            else ResetBounce();
 
             moveDir = moveDir.normalized;
 
@@ -304,8 +313,8 @@ public class CarController2D : NetworkBehaviour
             return;
         }
 
-        // [수정된 공식] (기본속도 * 타일배율) + 아이템추가속도
-        float finalSpeed = (moveSpeed * tileSpeedMultiplier) + addedSpeed;
+        // [수정된 공식] (기본속도 + 아이템추가속도) * 타일배율
+        float finalSpeed = (moveSpeed + addedSpeed) * tileSpeedMultiplier;
 
         rb.linearVelocity = moveDir * finalSpeed;
     }
@@ -315,27 +324,39 @@ public class CarController2D : NetworkBehaviour
     // ==========================================
 
     // 1. 공격 당했을 때 (ItemManager에서 호출)
-    public bool OnHit(ItemType attackType)
+    public bool OnHit()
     {
         if (isShieldActive)
         {
             Debug.Log("방어막으로 막음!");
             isShieldActive = false; // 방어막 소모
+            
+            // [NEW] 방어막이 깨졌으므로 시각 효과도 끔
+            if (shieldObject != null) shieldObject.SetActive(false); 
+            
             return false; // 공격 실패함
         }
         return true; // 공격 성공함
     }
 
+    private Coroutine currentBoostRoutine; // [NEW] 현재 실행 중인 부스트 코루틴 저장
+
     // 2. 속도 부스트 (대쉬, 햄찌 성공)
     public void ApplySpeedBoost(float amount, float duration)
     {
-        StartCoroutine(SpeedBoostRoutine(amount, duration));
+        // 이미 부스트 중이라면, 기존 코루틴을 끄고 새로 시작 (시간 갱신 효과)
+        if (currentBoostRoutine != null) StopCoroutine(currentBoostRoutine);
+        
+        currentBoostRoutine = StartCoroutine(SpeedBoostRoutine(amount, duration));
     }
 
     IEnumerator SpeedBoostRoutine(float amount, float duration)
     {
-        // [변경] 단순히 속도를 더해줍니다. (예: 10 + 5 = 15)
+        // 단순히 속도를 더해줍니다. (예: 10 + 5 = 15)
         addedSpeed = amount;
+        
+        CameraFollow cam = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
+        if (cam != null) cam.SetZoom(true);
 
         // UI나 로그로 확인하고 싶다면
         // Debug.Log($"부스트 온! 현재 추가 속도: {addedSpeed}");
@@ -343,7 +364,10 @@ public class CarController2D : NetworkBehaviour
         yield return new WaitForSeconds(duration);
 
         addedSpeed = 0f; // 원상복구
-                         // Debug.Log("부스트 종료");
+        if (cam != null) cam.SetZoom(false);
+        // Debug.Log("부스트 종료");
+
+        currentBoostRoutine = null; // 코루틴 종료 표시
     }
 
     // 3. 스턴 (햄찌 실패)
@@ -363,6 +387,11 @@ public class CarController2D : NetworkBehaviour
         Debug.Log("스턴 풀림");
     }
 
+    [Header("시각적 효과")]
+    public GameObject shieldObject; // [NEW] 실드 이펙트 오브젝트 (인스펙터에서 연결)
+
+    // ... (기존 코드)
+
     // 4. 방어막 활성
     public void ActivateShield(float duration)
     {
@@ -372,8 +401,16 @@ public class CarController2D : NetworkBehaviour
     IEnumerator ShieldRoutine(float duration)
     {
         isShieldActive = true;
+        if (shieldObject != null) shieldObject.SetActive(true); // [NEW] 실드 켜기
+        
+        Debug.Log("실드 ON!");
+
         yield return new WaitForSeconds(duration);
+
         isShieldActive = false;
+        if (shieldObject != null) shieldObject.SetActive(false); // [NEW] 실드 끄기
+        
+        Debug.Log("실드 OFF");
     }
 
     // 완주 처리 
@@ -386,5 +423,25 @@ public class CarController2D : NetworkBehaviour
     {
         yield return new WaitForSeconds(0.5f);
         isRaceFinished = true;
+    }
+
+    // 통통 튀는 애니메이션
+    void HandleBounce()
+    {
+        if (visualTransform == null) return;
+
+        // 시간(Time.time)에 따라 사인파로 크기 조절 (1.0 ~ 1.0 + bounceAmount)
+        float scaleY = 1.0f + Mathf.Abs(Mathf.Sin(Time.time * bounceSpeed)) * bounceAmount;
+        
+        // X 스케일은 유지하고 Y만 늘림 (차의 진행방향이나 수직방향)
+        visualTransform.localScale = new Vector3(1f, scaleY, 1f);
+    }
+
+    void ResetBounce()
+    {
+        if (visualTransform == null) return;
+        
+        // 원래 크기(1,1,1)로 부드럽게 복귀
+        visualTransform.localScale = Vector3.Lerp(visualTransform.localScale, Vector3.one, Time.deltaTime * 10f);
     }
 }

@@ -33,9 +33,17 @@ public class CameraFollow : MonoBehaviour
         Vector3 desiredPosition = target.position + offset;
         transform.position = Vector3.Lerp(transform.position, desiredPosition, followSpeed);
 
-        // 2. Z키 입력에 따른 Orthographic Size 변경 (화면 크기 확대/축소)
-        float targetSize = Input.GetKey(KeyCode.Z) ? boostSize : defaultSize;
+        // 2. 줌 상태에 따른 Orthographic Size 변경 (외부에서 SetZoom 호출)
+        float targetSize = isZoomed ? boostSize : defaultSize;
         cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize, Time.deltaTime * zoomSpeed);
+    }
+
+    private bool isZoomed = false;
+
+    // [NEW] 외부(CarController)에서 줌 제어
+    public void SetZoom(bool zoom)
+    {
+        isZoomed = zoom;
     }
 
     void Update()

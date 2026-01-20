@@ -319,6 +319,7 @@ MonoBehaviour:
   syncInterval: 0
   currentLap: 1
   hasFinished: 0
+  lapSoundClip: {fileID: 8300000, guid: 77c63c6fe6e623a498ce60f6cd65e39b, type: 3}
 --- !u!114 &6522779740199261730
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -6,22 +6,34 @@ public class PlayerLapController : NetworkBehaviour
     [SyncVar(hook = nameof(OnCurrentLapChanged))] public int currentLap = 1;
     [SyncVar] public bool hasFinished = false;
 
-    // --- 시간 측정용 변수 추가 ---
-    // --- 시간 측정용 변수 추가 ---
-    [SyncVar] private double startTime; // NetworkTime은 double을 반환함
+    // --- 시간 측정용 변수 ---
+    [SyncVar] private double startTime;
     [SyncVar] private bool isRacing = false;
     private float raceTime;
-    // ---------------------------
+    // -----------------------
+
+    // [NEW] 오디오 설정 변수 추가
+    [Header("Audio Settings")]
+    public AudioClip lapSoundClip; // 인스펙터에서 오디오 클립 연결
+    private AudioSource audioSource;
 
     private bool passedHalfWay = false;
 
-    // 로컬 플레이어가 시작될 때 시간을 서버로부터 동기화하거나 초기화
+    void Start()
+    {
+        // 오디오 소스 가져오기 (없으면 추가)
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+    }
+
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
     }
 
-    // [NEW] RaceManager에서 호출: 카운트다운 끝나면 타이머 시작
     public void StartRacing()
     {
         CmdRequestStartTime();
@@ -39,14 +51,13 @@ public class PlayerLapController : NetworkBehaviour
         isRacing = true;
     }
 
-    // [DEBUG] 강제 완주 (F3)
     [Command]
     void CmdDebugForceFinish()
     {
         if (LapManager.instance != null)
         {
             currentLap = LapManager.instance.totalLaps;
-            ProcessLap(); // 막바퀴 상태에서 호출하면 즉시 완주 처리됨
+            ProcessLap();
         }
     }
 
@@ -54,20 +65,16 @@ public class PlayerLapController : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        // [DEBUG] F3 누르면 즉시 완주
         if (Input.GetKeyDown(KeyCode.F3))
         {
             CmdDebugForceFinish();
         }
 
-        // 달리는 중이고, 아직 안 끝났을 때만 시간 계산
         if (!isRacing || hasFinished) return;
-        
-        // [FIX] NetworkTime을 사용하여 서버 시간 기준으로 경과 시간 계산
+
         raceTime = (float)(NetworkTime.time - startTime);
     }
 
-    // UI에서 이 함수를 불러서 시간을 가져감
     public float GetRaceTime()
     {
         return raceTime;
@@ -75,6 +82,7 @@ public class PlayerLapController : NetworkBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        // 충돌 감지는 서버에서만 수행
         if (!isServer) return;
 
         if (collision.CompareTag("HalfWay"))
@@ -105,6 +113,9 @@ public class PlayerLapController : NetworkBehaviour
             return;
         }
 
+        // [NEW] 바퀴를 돌 때마다 소리 재생 명령을 보냄 (완주 여부 상관없이 소리 남)
+        RpcPlayLapSound();
+
         if (currentLap < LapManager.instance.totalLaps)
         {
             currentLap++;
@@ -113,9 +124,19 @@ public class PlayerLapController : NetworkBehaviour
         else if (!hasFinished)
         {
             hasFinished = true;
-            isRacing = false; // 시간 멈춤
+            isRacing = false;
             LapManager.instance.OnPlayerFinished(netId.ToString());
             RpcStopVehicle();
+        }
+    }
+
+    // [NEW] 서버가 클라이언트들에게 소리를 재생하라고 시키는 함수
+    [ClientRpc]
+    void RpcPlayLapSound()
+    {
+        if (audioSource != null && lapSoundClip != null)
+        {
+            audioSource.PlayOneShot(lapSoundClip);
         }
     }
 
@@ -127,7 +148,7 @@ public class PlayerLapController : NetworkBehaviour
 
     public void StopVehicle()
     {
-        isRacing = false; // 클라이언트에서도 시간 멈춤
+        isRacing = false;
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -136,11 +157,10 @@ public class PlayerLapController : NetworkBehaviour
             rb.linearDamping = 10f;
         }
 
-        // 운전 스크립트가 있다면 완주 처리
         var car = GetComponent<CarController2D>();
-        if (car != null) 
+        if (car != null)
         {
-            car.FinishRace(); // [FIX] 0.8초 딜레이 후 정지 함수 호출
+            car.FinishRace();
         }
     }
 }

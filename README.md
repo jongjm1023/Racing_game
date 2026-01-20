@@ -25,7 +25,7 @@
 
 ### 📌 게임 설명
 
-
+<img width="2719" height="1510" alt="Image" src="https://github.com/user-attachments/assets/7bfd3e13-99f8-414f-b37c-79d97e1d4e01" />
 
 ### Scene. 메인
 

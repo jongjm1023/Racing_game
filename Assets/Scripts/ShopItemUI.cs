@@ -33,7 +33,7 @@ public class ShopItemUI : MonoBehaviour
             }
             else 
             {
-                priceText.text = $"{price:N0} 코인";
+                priceText.text = $"{price:N0} 해씨";
             }
         }
 

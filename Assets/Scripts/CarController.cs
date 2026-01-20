@@ -282,10 +282,15 @@ public class CarController2D : NetworkBehaviour
         return true; // 공격 성공함
     }
 
+    private Coroutine currentBoostRoutine; // [NEW] 현재 실행 중인 부스트 코루틴 저장
+
     // 2. 속도 부스트 (대쉬, 햄찌 성공)
     public void ApplySpeedBoost(float amount, float duration)
     {
-        StartCoroutine(SpeedBoostRoutine(amount, duration));
+        // 이미 부스트 중이라면, 기존 코루틴을 끄고 새로 시작 (시간 갱신 효과)
+        if (currentBoostRoutine != null) StopCoroutine(currentBoostRoutine);
+        
+        currentBoostRoutine = StartCoroutine(SpeedBoostRoutine(amount, duration));
     }
 
     IEnumerator SpeedBoostRoutine(float amount, float duration)
@@ -304,6 +309,8 @@ public class CarController2D : NetworkBehaviour
         addedSpeed = 0f; // 원상복구
         if (cam != null) cam.SetZoom(false);
         // Debug.Log("부스트 종료");
+
+        currentBoostRoutine = null; // 코루틴 종료 표시
     }
 
     // 3. 스턴 (햄찌 실패)

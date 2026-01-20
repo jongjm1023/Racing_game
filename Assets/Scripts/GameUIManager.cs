@@ -76,17 +76,17 @@ public class GameUIManager : MonoBehaviour
 
         if (isWinner)
         {
-            resultText.text = "YOU WIN!\n(+100 Coin)\n";
+            resultText.text = "YOU WIN!\n(+100 해씨)\n";
             resultText.color = Color.yellow;
         }
         else if (lp != null && lp.hasFinished)
         {
-            resultText.text = "GOAL IN!\n(+50 Coin)\n";
+            resultText.text = "GOAL IN!\n(+50 해씨)\n";
             resultText.color = Color.green;
         }
         else
         {
-            resultText.text = "RETIRED\n(+50 Coin)\n";
+            resultText.text = "RETIRED\n(+50 해씨)\n";
             resultText.color = Color.red;
         }
 

@@ -160,7 +160,7 @@ public class ShopManager : MonoBehaviour
     void UpdateUI()
     {
         if (userData != null)
-            currencyText.text = "재화: " + userData.seed_money;
+            currencyText.text = "해씨: " + userData.seed_money;
 
         foreach (Transform child in shopItemContainer)
             Destroy(child.gameObject);

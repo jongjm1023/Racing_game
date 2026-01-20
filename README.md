@@ -64,7 +64,7 @@
 
 - 개발 언어: C#
 - 게임 엔진: Unity
-- 백엔드: Node.js, MySQL
+- 백엔드: Node.js, MySQL, mirror
 - UI: Figma
 - 소스:
 https://cupnooble.itch.io/sprout-lands-asset-pack, 카트라이더 BGM

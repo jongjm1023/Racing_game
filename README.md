@@ -64,7 +64,7 @@
 
 - 개발 언어: C#
 - 게임 엔진: Unity
-- 백엔드: Node.js, MySQL, mirror
+- 백엔드: Node.js, MySQL, Mirror
 - UI: Figma
 - 소스:
 https://cupnooble.itch.io/sprout-lands-asset-pack, 카트라이더 BGM
@@ -72,6 +72,6 @@ https://cupnooble.itch.io/sprout-lands-asset-pack, 카트라이더 BGM
 <br>
 
 
-### 🟡 APK 파일
+### 🟡 EXE 파일
 
 [여기](https://github.com/Erc-nard/campusmap/releases/download/v0.1.0-alpha/campusmap-v0.1.0-alpha.apk)를 클릭하여 바로 내려받거나, Releases 탭에서 내역을 확인할 수 있습니다.

@@ -7,6 +7,10 @@ using System.Collections; // 코루틴 사용을 위해 필수
 [RequireComponent(typeof(Rigidbody2D))]
 public class CarController2D : NetworkBehaviour
 {
+    [Header("이펙트 설정")] // [NEW] 이펙트 변수 추가
+    public ParticleSystem movementParticle; // 인스펙터에서 연결하세요
+    private Vector3 lastPosition; // 움직임 감지용 이전 위치
+
     [Header("이동 설정")]
     public float moveSpeed = 10f;
     public float rotationSpeed = 720f;
@@ -52,6 +56,22 @@ public class CarController2D : NetworkBehaviour
         rb.gravityScale = 0;
         rb.linearDamping = 0;
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+        // [NEW] 파티클 자동 찾기 (연결 안 했을 경우 대비)
+        if (movementParticle == null)
+            movementParticle = GetComponentInChildren<ParticleSystem>();
+
+        // [NEW] 시작 위치 저장
+        lastPosition = transform.position;
+
+        // [강제 색상 변경] 파티클 시스템의 Main 모듈을 가져와서 색을 지정
+        if (movementParticle != null)
+        {
+            var main = movementParticle.main;
+
+            // 원하는 색으로 강제 변경 (예: 빨간색)
+            main.startColor = Color.white;
+        }
 
         if (visualTransform == null && transform.childCount > 0)
             visualTransform = transform.GetChild(0);
@@ -143,6 +163,7 @@ public class CarController2D : NetworkBehaviour
 
     void Update()
     {
+        UpdateMovementEffect();
         // 1. 로컬 플레이어 (내가 조종)
         if (isLocalPlayer)
         {
@@ -195,6 +216,33 @@ public class CarController2D : NetworkBehaviour
             Quaternion targetRotation = Quaternion.Euler(0, 0, syncedRotationAngle + -90f); // -90f 보정 주의
             visualTransform.rotation = Quaternion.RotateTowards(visualTransform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
+    }
+
+    // [NEW] 이펙트 처리 함수
+    void UpdateMovementEffect()
+    {
+        if (movementParticle == null) return;
+
+        // 현재 프레임의 이동 거리 계산
+        float distanceMoved = Vector3.Distance(transform.position, lastPosition);
+
+        // 속도 계산 (거리 / 시간)
+        float currentSpeed = distanceMoved / Time.deltaTime;
+
+        var emission = movementParticle.emission;
+
+        // 움직임이 감지되면 (속도가 0.1보다 크면) 파티클 켜기
+        if (currentSpeed > 0.1f)
+        {
+            emission.enabled = true;
+        }
+        else
+        {
+            emission.enabled = false;
+        }
+
+        // 현재 위치를 저장 (다음 프레임 비교용)
+        lastPosition = transform.position;
     }
 
     // [NEW] 각도 동기화 명령

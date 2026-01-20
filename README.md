@@ -2,52 +2,39 @@
 
 
 <img width="1186" height="820" alt="Image" src="https://github.com/user-attachments/assets/b10e34fc-9f62-4092-acae-23a4cb5a346a" />
+
 ```
-더 간편히, 더 자세히 카이스트 지도
+햄찌는 오늘도 달린다...!!!
 ```
 
 ---
 
-|팀원|github|
-|------|---|
-|유은선|https://github.com/Erc-nard|
-|이종민|https://github.com/jongjm1023|
+|팀원|github|역할|
+|------|---|---|
+|유은선|https://github.com/Erc-nard|기획, 그래픽, 클라이언트|
+|이종민|https://github.com/jongjm1023|서버, 클라이언트|
 
 
 
 ### ✨ 소개
-정보가 모자란 기존 지도앱들로 불편했던 카이스트 생활. 이젠 카이랑 맵이랑으로 해결! 
+달리기를 좋아하는 지구별의 햄찌! 햄찌는 오늘도 열심히 달린다...!!
 
 
 <br>
 
-기존 지도 앱에서는 가게 검색이 잘 되지 않거나 메뉴 정보가 없어 불편했고, 매점 위치나 셔틀버스 정보는 따로 확인해야 했습니다.
 
-이 앱은 **교내 지도, 매점·가게 정보, 셔틀버스 운행 정보**를 하나로 모아 학교 생활에 꼭 필요한 기능만 담았습니다. 특히 정류장마다 언제 버스가 도착하는지 알기 어려웠던 점을 해결하기 위해, **실시간 셔틀버스 위치를 예측**할 수 있도록 구현했습니다.
+### 📌 게임 설명
 
-캠퍼스 생활을 더 편리하게 만들어주는 올인원 캠퍼스 앱을 지금 경험해보세요.✨
 
+
+### Scene. 메인
+
+- 구글 연동 로그인 가능, 로그인 이력 저장
+- 
 <br>
 
-### 📌 주요 기능
+### Scene. 상점
 
-
-
-### 1. 지도탭
-
-
-
-- 음식점, 편의시설 등 카테고리 별 시설의 위치를 지도상에서 확인가능
-- 현재 위치로부터 시설까지의 거리 측정
-- 카이스트 교내 지점만 정확하게 검색
-- 자주 쓰는 줄임말, 건물 번호 자동 인식 후 검색 결과 제공  
-  (예: OLEV, 전산과, 썹웨, E-31)
-<br>
-
-### 2. 시설탭
-
-<img width="932" height="666" alt="Image"
-src="https://github.com/user-attachments/assets/a792a2c0-0970-4753-a3af-6b385c6a287e" />
 
 - 학교에 존재하는 시설들의 세부정보 확인가능
 - 영업 시간, 메뉴, 연락처 등 필수 정보 제공
@@ -55,7 +42,7 @@ src="https://github.com/user-attachments/assets/a792a2c0-0970-4753-a3af-6b385c6a
 - 건물 내부의 층별 안내도 확인 가능 (일부 건물만 지원)
 <br>
 
-### 3. 셔틀버스탭
+### Scene. 게임
 
 
 - 시간표에 따른 교내/통근 버스 현위치 확인
@@ -67,8 +54,10 @@ src="https://github.com/user-attachments/assets/a792a2c0-0970-4753-a3af-6b385c6a
 
 - 개발 언어: C#
 - 게임 엔진: Unity
-- 지도 API : Googlemap API
-- UI : Jetpack Compose, Figma
+- 백엔드: Node.js, MySQL
+- UI: Figma
+- 소스:
+https://cupnooble.itch.io/sprout-lands-asset-pack, 카트라이더 BGM
 
 <br>
 

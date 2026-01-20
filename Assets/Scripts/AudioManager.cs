@@ -23,7 +23,10 @@ public class AudioManager : MonoBehaviour
         }
         else
         {
-            Destroy(gameObject);
+            // [Fix] 씬 이동 시 중복된 매니저가 잠깐 소리를 내는 것을 방지
+            if (bgmSource != null) bgmSource.Stop();
+            if (sfxSource != null) sfxSource.Stop();
+            Destroy(gameObject); // 이미 있으면 새로 생긴 건 삭제
         }
     }
 

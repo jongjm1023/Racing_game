@@ -42,6 +42,8 @@
 - 건물 내부의 층별 안내도 확인 가능 (일부 건물만 지원)
 <br>
 
+<img width="1354" height="758" alt="Image" src="https://github.com/user-attachments/assets/461dcc60-dfc0-4056-b732-11d3e9e3ca07" />
+
 ### Scene. 게임
 
 

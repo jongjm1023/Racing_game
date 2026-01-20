@@ -116,10 +116,9 @@ public class ItemManager : NetworkBehaviour
     {
         // 내 고유 번호 (Network ID)
         uint myNetId = this.netId;
+        int attackCount = 0;
 
         Debug.Log($"[Server] 📡 공격 요청 수신! (공격자 ID: {myNetId})");
-
-        int attackCount = 0;
 
         // 서버에 접속한 모든 '연결(사람)'을 뒤짐
         foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
@@ -130,9 +129,18 @@ public class ItemManager : NetworkBehaviour
                 // 그 사람의 ID가 내 ID와 다르다면? => 적이다!
                 if (conn.identity.netId != myNetId)
                 {
-                    Debug.Log($"[Server] 🎯 타겟 발견! (타겟 ID: {conn.identity.netId}) -> 공격 발사!");
-                    TargetRpcReceiveAttack(conn, type);
-                    attackCount++;
+                    // [FIX] 상대방의 ItemManager 컴포넌트를 찾아서, '그 객체'에게 RPC를 보내야 함
+                    var targetItemManager = conn.identity.GetComponent<ItemManager>();
+                    if (targetItemManager != null)
+                    {
+                        Debug.Log($"[Server] 🎯 타겟 발견! (타겟 ID: {conn.identity.netId}) -> 공격 발사!");
+                        
+                        // [TargetRpc]는 호출된 인스턴스의 소유자(Client)에게 전송됩니다.
+                        // targetItemManager는 상대방 플레이어의 오브젝트이므로, 
+                        // 여기서 함수를 부르면 상대방 컴퓨터에서 실행됩니다.
+                        targetItemManager.TargetRpcReceiveAttack(type);
+                        attackCount++;
+                    }
                 }
             }
         }
@@ -144,10 +152,13 @@ public class ItemManager : NetworkBehaviour
     }
 
     // 2. [TargetRpc] 타겟이 된 클라이언트에서 실행
+    // 인자에서 NetworkConnection을 제거 (호출 주체가 곧 타겟이므로)
     [TargetRpc]
-    void TargetRpcReceiveAttack(NetworkConnection target, ItemType type)
+    public void TargetRpcReceiveAttack(ItemType type)
     {
-        Debug.Log($"💥 [Client] 공격 아이템 피격! ({type})");
+        Debug.Log($"💥 [Client] 공격 아이템 피격! ({type}) -> 효과 발동!");
+        // 이제 이 함수는 '피해자'의 컴퓨터에서, '피해자'의 로컬 오브젝트 위에서 돌아갑니다.
+        // 따라서 UI나 carController 참조가 올바르게 살아있습니다.
         ExecuteEffectLocal(type);
     }
 

@@ -16,6 +16,10 @@ public class RaceManager : NetworkBehaviour
     // 인스펙터에 넣을 필요 없음 (코드로 찾음)
     private CarController2D myCarController;
 
+    // [NEW] RPC 대신 SyncVar로 상태 동기화 (재접속/재시작 시 안정성 확보)
+    [SyncVar(hook = nameof(OnRaceStateChanged))]
+    public bool isRaceStarted = false;
+
     // [NEW] 서버가 시작되면 실행 (호스트 기준)
     public override void OnStartServer()
     {
@@ -28,7 +32,7 @@ public class RaceManager : NetworkBehaviour
     {
         Debug.Log("[Server] 플레이어 생성 대기 중...");
 
-        float timeout = 15f; // 최대 15초까지만 기다림 (무한 대기 방지)
+        float timeout = 15f; // 최대 15초까지만 기다림
         float elapsed = 0f;
 
         while (elapsed < timeout)
@@ -36,31 +40,29 @@ public class RaceManager : NetworkBehaviour
             int playerCount = NetworkManager.singleton.numPlayers;
             int carCount = FindObjectsByType<CarController2D>(FindObjectsSortMode.None).Length;
 
-            // 접속한 인원수만큼 차가 생성되었는지 확인
-            // (최소 1명 이상이어야 함)
             if (playerCount > 0 && carCount >= playerCount)
             {
                 Debug.Log($"[Server] 모든 플레이어({playerCount}명) 준비 완료!");
                 break; 
             }
 
-            // 아직 덜 왔으면 대기
             elapsed += 0.5f;
             yield return new WaitForSeconds(0.5f);
         }
 
-        // 안정성을 위해 아주 잠깐 더 대기
         yield return new WaitForSeconds(0.5f);
         
-        Debug.Log("[Server] 카운트다운 신호 전송!");
-        RpcStartCountdown();
+        Debug.Log("[Server] 카운트다운 신호 전송 (SyncVar)!");
+        isRaceStarted = true; // [Change] RPC 호출 대신 변수 변경
     }
 
-    // [NEW] 서버 -> 모든 클라이언트에게 "카운트다운 시작해!" 명령
-    [ClientRpc]
-    void RpcStartCountdown()
+    // [NEW] SyncVar 훅: 값이 바뀌면 클라이언트에서 자동 실행
+    void OnRaceStateChanged(bool oldState, bool newState)
     {
-        StartCoroutine(RoutineCountdown());
+        if (newState == true)
+        {
+            StartCoroutine(RoutineCountdown());
+        }
     }
 
     // 기존 로직을 Rpc에서 호출

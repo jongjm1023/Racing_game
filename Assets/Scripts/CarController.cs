@@ -267,12 +267,16 @@ public class CarController2D : NetworkBehaviour
     // ==========================================
 
     // 1. 공격 당했을 때 (ItemManager에서 호출)
-    public bool OnHit(ItemType attackType)
+    public bool OnHit()
     {
         if (isShieldActive)
         {
             Debug.Log("방어막으로 막음!");
             isShieldActive = false; // 방어막 소모
+            
+            // [NEW] 방어막이 깨졌으므로 시각 효과도 끔
+            if (shieldObject != null) shieldObject.SetActive(false); 
+            
             return false; // 공격 실패함
         }
         return true; // 공격 성공함
@@ -286,8 +290,11 @@ public class CarController2D : NetworkBehaviour
 
     IEnumerator SpeedBoostRoutine(float amount, float duration)
     {
-        // [변경] 단순히 속도를 더해줍니다. (예: 10 + 5 = 15)
+        // 단순히 속도를 더해줍니다. (예: 10 + 5 = 15)
         addedSpeed = amount;
+        
+        CameraFollow cam = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
+        if (cam != null) cam.SetZoom(true);
 
         // UI나 로그로 확인하고 싶다면
         // Debug.Log($"부스트 온! 현재 추가 속도: {addedSpeed}");
@@ -295,7 +302,8 @@ public class CarController2D : NetworkBehaviour
         yield return new WaitForSeconds(duration);
 
         addedSpeed = 0f; // 원상복구
-                         // Debug.Log("부스트 종료");
+        if (cam != null) cam.SetZoom(false);
+        // Debug.Log("부스트 종료");
     }
 
     // 3. 스턴 (햄찌 실패)
@@ -315,6 +323,11 @@ public class CarController2D : NetworkBehaviour
         Debug.Log("스턴 풀림");
     }
 
+    [Header("시각적 효과")]
+    public GameObject shieldObject; // [NEW] 실드 이펙트 오브젝트 (인스펙터에서 연결)
+
+    // ... (기존 코드)
+
     // 4. 방어막 활성
     public void ActivateShield(float duration)
     {
@@ -324,8 +337,16 @@ public class CarController2D : NetworkBehaviour
     IEnumerator ShieldRoutine(float duration)
     {
         isShieldActive = true;
+        if (shieldObject != null) shieldObject.SetActive(true); // [NEW] 실드 켜기
+        
+        Debug.Log("실드 ON!");
+
         yield return new WaitForSeconds(duration);
+
         isShieldActive = false;
+        if (shieldObject != null) shieldObject.SetActive(false); // [NEW] 실드 끄기
+        
+        Debug.Log("실드 OFF");
     }
 
     // 완주 처리 

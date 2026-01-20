@@ -5469,7 +5469,7 @@ PrefabInstance:
     - target: {fileID: 403337736873330250, guid: 46b0751fd20f06b49996e23c425bbc2e, type: 3}
       propertyPath: playerPrefab
       value: 
-      objectReference: {fileID: 4108600045980324644, guid: 742e8b5f049def341b8975f581f9fb66, type: 3}
+      objectReference: {fileID: 1329614956073388936, guid: e69c375bbf81ec14dbf9a2e063585e77, type: 3}
     - target: {fileID: 403337736873330250, guid: 46b0751fd20f06b49996e23c425bbc2e, type: 3}
       propertyPath: autoCreatePlayer
       value: 1

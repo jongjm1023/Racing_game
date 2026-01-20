@@ -156,10 +156,10 @@ public class ItemManager : NetworkBehaviour
     [TargetRpc]
     public void TargetRpcReceiveAttack(ItemType type)
     {
-        Debug.Log($"💥 [Client] 공격 아이템 피격! ({type}) -> 효과 발동!");
-        // 이제 이 함수는 '피해자'의 컴퓨터에서, '피해자'의 로컬 오브젝트 위에서 돌아갑니다.
-        // 따라서 UI나 carController 참조가 올바르게 살아있습니다.
-        ExecuteEffectLocal(type);
+        if(carController.OnHit()){
+            ExecuteEffectLocal(type);
+            Debug.Log($"💥 [Client] 공격 아이템 피격! ({type}) -> 효과 발동!");
+        }
     }
 
     // 실질적인 효과 실행 (나한테 쓰든, 남이 나한테 썼든 여기서 처리)

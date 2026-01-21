@@ -7,7 +7,7 @@ public class MainMenuController : MonoBehaviour
     public TMP_Text characterNameText; // [NEW] 캐릭터 이름 표시용 텍스트
     
     // IP 주소 가셔오는 헬퍼 함수, 테스트시 localhost로 변경
-    private static string serverIP = "10.249.18.54"; 
+    private static string serverIP = "10.249.18.59"; 
 
     // IP 주소 가져오는 헬퍼 함수
     public static string GetServerIP()

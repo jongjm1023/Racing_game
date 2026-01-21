@@ -55,20 +55,25 @@ public class ShopItemUI : MonoBehaviour
         }
 
         // [추가] ShopItem 자체를 클릭해도 동작하게 하기
-        // 이미지 컴포넌트가 없으면 클릭을 못 받으므로 투명 이미지를 추가합니다.
+        // 이미 버튼 컴포넌트가추가되어 있다고 가정하고 가져옵니다.
         Button mainBtn = GetComponent<Button>();
-        if (mainBtn == null) mainBtn = gameObject.AddComponent<Button>();
-        
-        // 클릭 감지용 투명 이미지 확인
-        Image raycastImg = GetComponent<Image>();
-        if (raycastImg == null)
+        if (mainBtn != null)
         {
-            raycastImg = gameObject.AddComponent<Image>();
-            raycastImg.color = new Color(0,0,0,0); // 투명
-            raycastImg.raycastTarget = true;       // 클릭 감지 ON
+            mainBtn.onClick.RemoveAllListeners();
+            // 소리 재생 추가: AudioManager를 통해 소리 재생 (일관된 볼륨)
+            mainBtn.onClick.AddListener(() => 
+            {
+               if (AudioManager.instance != null && clickSound != null)
+                   AudioManager.instance.PlaySFX(clickSound);
+            });
+            mainBtn.onClick.AddListener(onBuy);
         }
-
-        mainBtn.onClick.RemoveAllListeners();
-        mainBtn.onClick.AddListener(onBuy);
+        else
+        {
+            Debug.LogError($"[ShopItemUI] '{name}' 오브젝트에 Button 컴포넌트가 없습니다! 인스펙터에서 추가해주세요.");
+        }
     }
+    
+    // [NEW] 클릭 사운드 (인스펙터에서 할당 필요)
+    public AudioClip clickSound;
 }

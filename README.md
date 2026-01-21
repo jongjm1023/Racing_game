@@ -66,7 +66,7 @@
     - **역할:** 유저 정보, 인벤토리, 상점 정보 저장
     - <img width="834" height="585" alt="스크린샷 2026-01-20 155751" src="https://github.com/user-attachments/assets/b8bbbd41-f956-4997-a5e2-ae71470931a2" />
 - **SDK:** **Google Sign-In (구글 로그인)**
-    - **역할:** 유니티 시작 화면에서 구글 계정으로 로그인 후, 받은 ID 값을 Node.js 서버로 보냅니다.
+    - **역할:** 유니티 시작 화면에서 구글 계정으로 로그인 후, 받은 ID 값을 Node.js 서버로 전송
 
 ### ✅ 개발 스택
 

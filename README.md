@@ -28,8 +28,6 @@
 
 <img width="2719" height="1510" alt="Image" src="https://github.com/user-attachments/assets/7bfd3e13-99f8-414f-b37c-79d97e1d4e01" />
 
-### DB 구조(MYSQL)
-<img width="834" height="585" alt="스크린샷 2026-01-20 155751" src="https://github.com/user-attachments/assets/b8bbbd41-f956-4997-a5e2-ae71470931a2" />
 
 ### Scene. 메인
 
@@ -59,6 +57,16 @@
 - 상대 골인 후 10초안에 들어오지 않으면 리타이어, 승리시 +100해씨, 패배 또는 리타이어시 +50해씨 획득
 <br>
 
+### 게임 구조(MYSQL)
+- **서버:** **Node.js**
+    - **역할:** 유니티와 DB를 연결 및 관리
+- **게임 네트워크:** **Mirror (유니티 에셋)**
+    - **역할:** 레이싱 중 실시간 상호작용
+- **DB:** **MySQL**
+    - **역할:** 유저 정보, 인벤토리, 상점 정보 저장
+    - <img width="834" height="585" alt="스크린샷 2026-01-20 155751" src="https://github.com/user-attachments/assets/b8bbbd41-f956-4997-a5e2-ae71470931a2" />
+- **SDK:** **Google Sign-In (구글 로그인)**
+    - **역할:** 유니티 시작 화면에서 구글 계정으로 로그인 후, 받은 ID 값을 Node.js 서버로 보냅니다.
 
 ### ✅ 개발 스택
 

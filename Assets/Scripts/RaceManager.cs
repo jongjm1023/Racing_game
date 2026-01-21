@@ -56,12 +56,16 @@ public class RaceManager : NetworkBehaviour
         isRaceStarted = true; // [Change] RPC 호출 대신 변수 변경
     }
 
+    private Coroutine countdownCoroutine;
+
     // [NEW] SyncVar 훅: 값이 바뀌면 클라이언트에서 자동 실행
     void OnRaceStateChanged(bool oldState, bool newState)
     {
         if (newState == true)
         {
-            StartCoroutine(RoutineCountdown());
+            // [Fix] 중복 실행 방지: 이미 카운트다운 중이면 멈추고 다시 시작 (혹은 무시)
+            if (countdownCoroutine != null) StopCoroutine(countdownCoroutine);
+            countdownCoroutine = StartCoroutine(RoutineCountdown());
         }
     }
 
@@ -86,6 +90,7 @@ public class RaceManager : NetworkBehaviour
         // ====================================================
         if (audioSource != null && fullCountdownClip != null)
         {
+            audioSource.Stop(); // [Fix] 혹시라도 재생 중인 소리가 있으면 멈춤
             audioSource.PlayOneShot(fullCountdownClip);
             // [Fix] 사운드 출력구 연결 (혹시 안되어있을 경우 대비)
             // if (AudioManager.instance != null) audioSource.outputAudioMixerGroup = ... 
